@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Egg } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 
 export default function LoginPage() {
@@ -24,13 +23,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-brand-600 flex items-center justify-center mb-3">
-            <Egg size={22} className="text-white" />
-          </div>
-          <h1 className="text-xl font-medium text-stone-900" style={{ fontFamily: 'DM Serif Display, serif' }}>
-            PFFMS
-          </h1>
-          <p className="text-sm text-stone-400 mt-0.5">Poultry Farm Financial Management</p>
+          <img src="/logo.png" alt="Okesreal Farm" className="h-16 w-auto object-contain mb-3" />
+          <p className="text-sm text-stone-400 mt-0.5">Farm Management System</p>
         </div>
 
         <div className="card">

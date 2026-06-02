@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Egg, Skull, Package, Wheat, Receipt,
-  ShoppingCart, Users, Wallet, Calculator, BarChart3, FileText,
+  ShoppingCart, Users, Wallet, Calculator, BarChart3,
   Settings, LogOut, BarChart2, Grid3x3,
 } from 'lucide-react'
 import { useFarmStore } from '@/store/farmStore'
@@ -47,15 +47,7 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-[220px] bg-white border-r border-stone-200 flex flex-col z-40">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-stone-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
-            <Egg size={16} className="text-white" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-stone-900" style={{ fontFamily: 'DM Serif Display, serif' }}>PFFMS</div>
-            <div className="text-[10px] text-stone-400">Poultry Intelligence</div>
-          </div>
-        </div>
+        <img src="/logo.png" alt="Okesreal Farm" className="h-10 w-auto object-contain" />
       </div>
 
       {/* Nav */}
