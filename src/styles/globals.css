@@ -1,0 +1,163 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&family=DM+Mono&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'DM Serif Display';
+  --font-body: 'DM Sans';
+  --font-mono: 'DM Mono';
+  --sidebar-width: 220px;
+  --brand: #0F6E56;
+  --brand-light: #E1F5EE;
+  --brand-mid: #1D9E75;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  background: #F7F6F2;
+  color: #1a1a18;
+}
+
+input, select, textarea {
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+
+/* Form element resets */
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+@layer components {
+  .page-fade {
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    @apply bg-white border border-stone-200 rounded-xl p-5;
+  }
+
+  .label {
+    @apply text-xs text-stone-500 font-medium uppercase tracking-wide mb-2 block;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white
+           focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600/20
+           transition-colors;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium
+           border border-stone-200 bg-white hover:bg-stone-50 transition-all cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply bg-brand-600 text-white border-brand-600 hover:bg-brand-800;
+  }
+
+  .btn-danger {
+    @apply text-red-500 border-transparent hover:bg-red-50 px-2 py-1 text-xs;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-green { @apply bg-brand-50 text-brand-800; }
+  .badge-red { @apply bg-red-50 text-red-700; }
+  .badge-amber { @apply bg-amber-50 text-amber-800; }
+  .badge-blue { @apply bg-blue-50 text-blue-800; }
+  .badge-gray { @apply bg-stone-100 text-stone-600; }
+
+  .kpi-card {
+    @apply bg-white border border-stone-200 rounded-xl p-4;
+  }
+
+  .kpi-label {
+    @apply text-xs text-stone-500 uppercase tracking-wide font-medium mb-1;
+  }
+
+  .kpi-value {
+    @apply text-2xl font-medium text-stone-900;
+  }
+
+  .kpi-sub {
+    @apply text-xs text-stone-400 mt-0.5;
+  }
+
+  .tbl-wrap {
+    @apply overflow-x-auto;
+  }
+
+  .tbl {
+    @apply w-full text-sm border-collapse;
+  }
+
+  .tbl th {
+    @apply text-left py-2.5 px-3 text-xs font-medium text-stone-500 uppercase tracking-wide
+           border-b border-stone-100;
+  }
+
+  .tbl td {
+    @apply py-2.5 px-3 border-b border-stone-50 text-stone-800;
+  }
+
+  .tbl tr:last-child td { @apply border-b-0; }
+  .tbl tr:hover td { @apply bg-stone-50/60; }
+
+  .nav-item {
+    @apply flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-500
+           cursor-pointer transition-all hover:text-stone-800 hover:bg-stone-100;
+  }
+
+  .nav-item.active {
+    @apply bg-brand-50 text-brand-800 font-medium;
+  }
+
+  .section-title {
+    @apply text-xs font-medium text-stone-400 uppercase tracking-widest mb-3;
+  }
+
+  .form-row {
+    @apply grid grid-cols-2 gap-3 mb-3;
+  }
+
+  .form-row-3 {
+    @apply grid grid-cols-3 gap-3 mb-3;
+  }
+
+  .form-group {
+    @apply flex flex-col gap-1;
+  }
+
+  .form-label {
+    @apply text-xs text-stone-500;
+  }
+
+  .alert {
+    @apply flex items-center gap-2 p-3 rounded-lg text-sm mb-4;
+  }
+
+  .alert-warn { @apply bg-amber-50 text-amber-800 border border-amber-200; }
+  .alert-success { @apply bg-brand-50 text-brand-800 border border-brand-200; }
+  .alert-danger { @apply bg-red-50 text-red-800 border border-red-200; }
+
+  .pricing-row {
+    @apply flex justify-between items-center py-2 border-b border-stone-100 text-sm;
+  }
+
+  .pricing-row:last-child {
+    @apply border-b-0 font-medium text-base pt-3 mt-1;
+  }
+}

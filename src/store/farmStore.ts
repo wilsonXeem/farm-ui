@@ -1,0 +1,163 @@
+'use client'
+import { create } from 'zustand'
+import { farmService } from '@/services/farmService'
+import type {
+  FarmStore, ProductionRecord, MortalityRecord, InventoryItem,
+  FeedPurchase, ExpenseRecord, SaleRecord, Worker, PayrollRecord, Pen,
+} from '@/types'
+
+interface ExtendedFarmStore extends FarmStore {
+  loaded: boolean
+  loadAll: () => Promise<void>
+}
+
+export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
+  totalBirds: 500,
+  loaded: false,
+  pens: [],
+  production: [],
+  mortality: [],
+  inventory: [],
+  feed: [],
+  expenses: [],
+  sales: [],
+  workers: [],
+  payroll: [],
+
+  loadAll: async () => {
+    if (get().loaded) return
+    const fetchAll = async () => {
+      const [pens, production, mortality, inventory, feed, expenses, sales, workers, payroll] =
+        await Promise.all([
+          farmService.getPens(),
+          farmService.getProduction(),
+          farmService.getMortality(),
+          farmService.getInventory(),
+          farmService.getFeed(),
+          farmService.getExpenses(),
+          farmService.getSales(),
+          farmService.getWorkers(),
+          farmService.getPayroll(),
+        ])
+      set({ pens, production, mortality, inventory, feed, expenses, sales, workers, payroll, loaded: true })
+    }
+    try {
+      await fetchAll()
+    } catch (e) {
+      console.warn('First load failed, retrying in 4s (Render cold start)...', e)
+      setTimeout(async () => {
+        try { await fetchAll() } catch (e2) { console.error('Retry failed:', e2) }
+      }, 4000)
+    }
+  },
+
+  addProduction: async (r) => {
+    const rec = await farmService.addProduction(r)
+    set(s => ({ production: [rec, ...s.production] }))
+  },
+  deleteProduction: async (id) => {
+    await farmService.deleteProduction(id)
+    set(s => ({ production: s.production.filter(x => x.id !== id) }))
+  },
+
+  addMortality: async (r) => {
+    const rec = await farmService.addMortality(r)
+    set(s => ({ mortality: [rec, ...s.mortality] }))
+  },
+  deleteMortality: async (id) => {
+    await farmService.deleteMortality(id)
+    set(s => ({ mortality: s.mortality.filter(x => x.id !== id) }))
+  },
+
+  addInventory: async (r) => {
+    const rec = await farmService.addInventory(r)
+    set(s => ({ inventory: [rec, ...s.inventory] }))
+  },
+  deleteInventory: async (id) => {
+    await farmService.deleteInventory(id)
+    set(s => ({ inventory: s.inventory.filter(x => x.id !== id) }))
+  },
+
+  addFeed: async (r) => {
+    const rec = await farmService.addFeed(r)
+    set(s => ({ feed: [rec, ...s.feed] }))
+  },
+  deleteFeed: async (id) => {
+    await farmService.deleteFeed(id)
+    set(s => ({ feed: s.feed.filter(x => x.id !== id) }))
+  },
+
+  addExpense: async (r) => {
+    const rec = await farmService.addExpense(r)
+    set(s => ({ expenses: [rec, ...s.expenses] }))
+  },
+  deleteExpense: async (id) => {
+    await farmService.deleteExpense(id)
+    set(s => ({ expenses: s.expenses.filter(x => x.id !== id) }))
+  },
+
+  addSale: async (r) => {
+    const rec = await farmService.addSale(r)
+    set(s => ({ sales: [rec, ...s.sales] }))
+  },
+  deleteSale: async (id) => {
+    await farmService.deleteSale(id)
+    set(s => ({ sales: s.sales.filter(x => x.id !== id) }))
+  },
+
+  addWorker: async (r) => {
+    const rec = await farmService.addWorker(r)
+    set(s => ({ workers: [rec, ...s.workers] }))
+  },
+  deleteWorker: async (id) => {
+    await farmService.deleteWorker(id)
+    set(s => ({ workers: s.workers.filter(x => x.id !== id) }))
+  },
+
+  addPayroll: async (r) => {
+    const rec = await farmService.addPayroll(r)
+    set(s => ({ payroll: [rec, ...s.payroll] }))
+  },
+
+  addPen: async (r) => {
+    const rec = await farmService.addPen(r)
+    set(s => ({ pens: [...s.pens, rec] }))
+  },
+  updatePen: async (id, r) => {
+    const rec = await farmService.updatePen(id, r)
+    set(s => ({ pens: s.pens.map(p => p.id === id ? rec : p) }))
+  },
+  deletePen: async (id) => {
+    await farmService.deletePen(id)
+    set(s => ({ pens: s.pens.filter(p => p.id !== id) }))
+  },
+}))
+
+export function useTotals() {
+  const { production, expenses, feed, sales, workers, mortality, pens } = useFarmStore()
+  const goodEggs = production.reduce((s, r) => s + r.goodEggs, 0)
+  const feedCost = feed.reduce((s, r) => s + r.totalCost, 0)
+  const salaryCost = workers.reduce((s, w) => s + w.salary, 0)
+  const otherCost = expenses.reduce((s, r) => s + r.amount, 0)
+  const totalExpenses = feedCost + salaryCost + otherCost
+  const totalRevenue = sales.reduce((s, r) => s + r.total, 0)
+  const profit = totalRevenue - totalExpenses
+  const costPerEgg = goodEggs > 0 ? totalExpenses / goodEggs : 0
+  const costPerCrate = costPerEgg * 30
+  const totalBirds = pens.reduce((s, p) => s + p.totalBirds, 0)
+  const totalMortality = mortality.reduce((s, r) => s + r.count, 0)
+  const availableBirds = totalBirds - totalMortality
+  const unpaidDebt = sales.filter(s => s.status === 'Unpaid').reduce((s, r) => s + r.total, 0)
+  return { goodEggs, feedCost, salaryCost, otherCost, totalExpenses, totalRevenue, profit, costPerEgg, costPerCrate, availableBirds, totalMortality, unpaidDebt, totalBirds }
+}
+
+export function usePenTotals(penId: string) {
+  const { production, mortality, pens } = useFarmStore()
+  const pen = pens.find(p => p.id === penId)
+  const penProduction = production.filter(r => r.penId === penId)
+  const penMortality = mortality.filter(r => r.penId === penId)
+  const goodEggs = penProduction.reduce((s, r) => s + r.goodEggs, 0)
+  const deaths = penMortality.reduce((s, r) => s + r.count, 0)
+  const availableBirds = (pen?.totalBirds ?? 0) - deaths
+  return { goodEggs, deaths, availableBirds, totalBirds: pen?.totalBirds ?? 0 }
+}
