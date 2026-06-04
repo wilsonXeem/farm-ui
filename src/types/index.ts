@@ -67,14 +67,31 @@ export interface ExpenseRecord {
   description?: string
 }
 
+export type EggSize = 'Jumbo' | 'Medium' | 'Table'
+
 export interface SaleRecord {
   id: string
   date: string
   customer?: string
+  size: EggSize
   crates: number
   pricePerCrate: number
   total: number
   status: 'Paid' | 'Unpaid' | 'Part payment'
+}
+
+export interface OtherSaleRecord {
+  id: string
+  date: string
+  item: string
+  qty: number
+  unit: string
+  unitPrice: number
+  total: number
+  customer?: string
+  status: 'Paid' | 'Unpaid' | 'Part payment'
+  penId?: string
+  pen?: { id: string; name: string }
 }
 
 export interface Worker {
@@ -104,6 +121,7 @@ export interface FarmStore {
   feed: FeedPurchase[]
   expenses: ExpenseRecord[]
   sales: SaleRecord[]
+  otherSales: OtherSaleRecord[]
   workers: Worker[]
   payroll: PayrollRecord[]
   addProduction: (r: Omit<ProductionRecord, 'id' | 'goodEggs'>) => void
@@ -118,6 +136,8 @@ export interface FarmStore {
   deleteExpense: (id: string) => void
   addSale: (r: Omit<SaleRecord, 'id'>) => void
   deleteSale: (id: string) => void
+  addOtherSale: (r: Omit<OtherSaleRecord, 'id'>) => void
+  deleteOtherSale: (id: string) => void
   addWorker: (r: Omit<Worker, 'id'>) => void
   deleteWorker: (id: string) => void
   addPayroll: (r: Omit<PayrollRecord, 'id'>) => void

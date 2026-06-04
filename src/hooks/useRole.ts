@@ -13,7 +13,7 @@ const NAV_ACCESS: Record<Role, string[]> = {
     '/analytics', '/reports',
   ],
   'Accountant': [
-    '/dashboard', '/workers', '/payroll', '/pricing', '/analytics', '/reports',
+    '/dashboard', '/sales', '/workers', '/payroll', '/pricing', '/analytics', '/reports',
   ],
   'Sales': [
     '/dashboard', '/sales', '/expenses',
@@ -43,7 +43,7 @@ export function useRole() {
     writeInventory:  role === 'Admin' || role === 'Farm Manager',
     writeFeed:       role === 'Admin' || role === 'Farm Manager',
     writeExpenses:   role === 'Admin' || role === 'Sales',
-    writeSales:      role === 'Admin' || role === 'Sales',
+    writeSales:      role === 'Admin' || role === 'Sales' || role === 'Accountant',
     writeWorkers:    role === 'Admin',
     writePayroll:    role === 'Admin' || role === 'Accountant',
     viewSettings:    role === 'Admin',
