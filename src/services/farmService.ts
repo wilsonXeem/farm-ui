@@ -110,6 +110,12 @@ export const farmService = {
   addInventory:    (d: Omit<InventoryItem, 'id'>) =>
     api.post<any>('/api/inventory', { ...d, farmId: FARM_ID }).then(normInventory),
   deleteInventory: (id: string) => api.delete(`/api/inventory/${id}`),
+  stockIn:  (inventoryId: string, qty: number, reason: string) =>
+    api.post<any>('/api/inventory/stock-in',  { inventoryId, qty, reason, date: new Date().toISOString().split('T')[0], farmId: FARM_ID }).then(normInventory),
+  stockOut: (inventoryId: string, qty: number, reason: string) =>
+    api.post<any>('/api/inventory/stock-out', { inventoryId, qty, reason, date: new Date().toISOString().split('T')[0], farmId: FARM_ID }).then(normInventory),
+  getMovements: (inventoryId?: string) =>
+    api.get<any[]>(`/api/inventory/movements?farmId=${FARM_ID}${inventoryId ? `&inventoryId=${inventoryId}` : ''}`),
 
   getFeed:         () => api.get<any[]>(`/api/feed?farmId=${FARM_ID}`).then(r => r.map(normFeed)),
   addFeed:         (d: Omit<FeedPurchase, 'id'>) =>

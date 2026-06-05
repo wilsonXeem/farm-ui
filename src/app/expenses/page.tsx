@@ -36,7 +36,7 @@ export default function ExpensesPage() {
   return (
     <Shell>
       <PageHeader title="Expenses" subtitle="All operational costs" />
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Total expenses</div><div className="kpi-value text-red-500">{fmt(total)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Records</div><div className="kpi-value">{expenses.length}</div></div>
         {byCategory.slice(0, 2).map(x => (

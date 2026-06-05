@@ -30,7 +30,7 @@ function PenCard({ penId }: { penId: string }) {
         </div>
         {can.writeWorkers && <DeleteBtn onDelete={() => deletePen(pen.id)} />}
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <div className="bg-stone-50 rounded-lg p-2 text-center">
           <div className="text-xs text-stone-400 mb-0.5">Total birds</div>
           <div className="font-medium text-sm">{fmtN(pen.totalBirds)}</div>
@@ -80,13 +80,13 @@ export default function PensPage() {
     <Shell>
       <PageHeader title="Pens" subtitle="Manage pens, bird counts and staff assignments" />
 
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Total pens</div><div className="kpi-value">{pens.length}</div></div>
         <div className="kpi-card"><div className="kpi-label">Total birds</div><div className="kpi-value">{fmtN(totalBirds)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Assigned pens</div><div className="kpi-value text-brand-600">{assigned} / {pens.length}</div></div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
         {can.writeWorkers && (
           <div className="card">
             <div className="section-title">Add new pen</div>
@@ -137,7 +137,7 @@ export default function PensPage() {
 
       <div className="section-title">All pens</div>
       {pens.length === 0 ? <EmptyState message="No pens created yet." /> : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {pens.map(pen => <PenCard key={pen.id} penId={pen.id} />)}
         </div>
       )}

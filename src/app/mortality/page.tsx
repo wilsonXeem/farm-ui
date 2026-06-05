@@ -36,7 +36,7 @@ export default function MortalityPage() {
     <Shell>
       <PageHeader title="Mortality" subtitle="Track bird deaths per pen" />
 
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         <KpiCard label="Birds available" value={fmtN(availableBirds)} color="green" />
         <KpiCard label="Total deaths" value={fmtN(totalMortality)} color="red" />
         <KpiCard label="Mortality rate" value={totalBirds > 0 ? ((totalMortality / totalBirds) * 100).toFixed(1) + '%' : '0%'} />
@@ -45,7 +45,7 @@ export default function MortalityPage() {
       {pens.length > 0 && (
         <div className="card mb-4">
           <div className="section-title">Birds per pen</div>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {pens.map(pen => {
               const deaths = mortality.filter(r => r.penId === pen.id).reduce((s, r) => s + r.count, 0)
               const available = pen.totalBirds - deaths

@@ -304,7 +304,7 @@ export default function SalesPage() {
       <PageHeader title="Sales" subtitle="Egg sales and other farm sales" />
 
       {/* KPIs */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Total revenue</div><div className="kpi-value text-brand-600">{fmt(totalRevenue)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Egg revenue</div><div className="kpi-value">{fmt(eggRevenue)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Other revenue</div><div className="kpi-value">{fmt(otherRevenue)}</div></div>

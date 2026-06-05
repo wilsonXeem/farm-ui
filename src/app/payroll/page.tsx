@@ -26,7 +26,7 @@ export default function PayrollPage() {
   return (
     <Shell>
       <PageHeader title="Payroll" subtitle={`Salary payments — ${monthLabel}`} />
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Total payable</div><div className="kpi-value">{fmt(totalPayable)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Paid this month</div><div className="kpi-value text-brand-600">{fmt(totalPaid)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Outstanding</div><div className={`kpi-value ${outstanding > 0 ? 'text-red-500' : 'text-brand-600'}`}>{fmt(outstanding)}</div></div>

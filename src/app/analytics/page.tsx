@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
     <Shell>
       <PageHeader title="Analytics" subtitle={subtitle} />
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         {/* Production trend */}
         <div className="card">
           <div className="section-title">Egg production — last 7 days</div>
@@ -115,7 +115,7 @@ export default function AnalyticsPage() {
       {/* Expense breakdown */}
       <div className="card">
         <div className="section-title">Expense breakdown (all time)</div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {expBreakdown.map(e => (
             <div key={e.name} className="kpi-card">
               <div className="kpi-label">{e.name}</div>

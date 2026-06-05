@@ -132,7 +132,7 @@ function AccountantDashboard() {
         <KpiCard label="Expenses today" value={fmt(todayExp)} color="red" />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <div className="card">
           <div className="section-title">Revenue vs expenses — last 7 days</div>
           <ResponsiveContainer width="100%" height={180}>
@@ -238,7 +238,7 @@ function AdminDashboard() {
       {pens.length > 0 && (
         <div className="card mb-4">
           <div className="section-title">Pen overview</div>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {pens.map(pen => {
               const deaths = mortality.filter(r => r.penId === pen.id).reduce((s, r) => s + r.count, 0)
               const eggs = production.filter(r => r.penId === pen.id).reduce((s, r) => s + r.goodEggs, 0)
@@ -256,7 +256,7 @@ function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <div className="card">
           <div className="section-title">Production — last 7 days</div>
           <ResponsiveContainer width="100%" height={180}>

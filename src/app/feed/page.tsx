@@ -35,7 +35,7 @@ export default function FeedPage() {
   return (
     <Shell>
       <PageHeader title="Feed costs" subtitle="Track feed purchases and supplier prices" />
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Total feed spend</div><div className="kpi-value text-red-500">{fmt(total)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Purchase records</div><div className="kpi-value">{feed.length}</div></div>
         <div className="kpi-card"><div className="kpi-label">Avg per purchase</div><div className="kpi-value">{feed.length > 0 ? fmt(total / feed.length) : '—'}</div></div>

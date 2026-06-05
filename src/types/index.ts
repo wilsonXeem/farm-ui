@@ -28,6 +28,16 @@ export interface MortalityRecord {
   pen?: { id: string; name: string }
 }
 
+export interface StockMovement {
+  id: string
+  date: string
+  type: 'IN' | 'OUT'
+  qty: number
+  reason?: string
+  inventoryId: string
+  inventory?: { item: string; unit: string }
+}
+
 export interface InventoryItem {
   id: string
   item: string

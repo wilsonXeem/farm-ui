@@ -44,7 +44,7 @@ export default function PricingPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         {/* Cost breakdown */}
         <div className="card">
           <div className="section-title">Cost breakdown</div>

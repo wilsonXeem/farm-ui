@@ -89,7 +89,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   .kpi-value {
-    @apply text-2xl font-medium text-stone-900;
+    @apply text-xl sm:text-2xl font-medium text-stone-900;
   }
 
   .kpi-sub {
@@ -130,11 +130,11 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   }
 
   .form-row {
-    @apply grid grid-cols-2 gap-3 mb-3;
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3;
   }
 
   .form-row-3 {
-    @apply grid grid-cols-3 gap-3 mb-3;
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3;
   }
 
   .form-group {

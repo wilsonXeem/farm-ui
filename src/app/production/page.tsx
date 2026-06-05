@@ -46,7 +46,7 @@ export default function ProductionPage() {
     <Shell>
       <PageHeader title="Production" subtitle="Daily egg production tracking per pen" />
 
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <KpiCard label="Total eggs produced" value={fmtN(total)} />
         <KpiCard label="Good eggs" value={fmtN(good)} color="green" />
         <KpiCard label="Cracked eggs" value={fmtN(cracked)} color="red" />

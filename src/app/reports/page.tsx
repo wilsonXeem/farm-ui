@@ -77,7 +77,7 @@ export default function ReportsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Good eggs</div><div className="kpi-value">{fmtN(totalEggs)}</div></div>
         {!isStaff && <>
           <div className="kpi-card"><div className="kpi-label">Total expenses</div><div className="kpi-value text-red-500">{fmt(totalExp)}</div></div>

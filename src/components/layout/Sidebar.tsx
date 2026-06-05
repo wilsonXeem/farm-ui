@@ -1,11 +1,10 @@
 'use client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { usePathname } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Egg, Skull, Package, Wheat, Receipt,
   ShoppingCart, Users, Wallet, Calculator, BarChart3,
-  Settings, LogOut, BarChart2, Grid3x3,
+  Settings, LogOut, BarChart2, Grid3x3, X,
 } from 'lucide-react'
 import { useFarmStore } from '@/store/farmStore'
 import { useAuthStore } from '@/store/authStore'
@@ -29,7 +28,12 @@ const NAV = [
   { href: '/settings',   label: 'Settings',        icon: Settings },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  open?: boolean
+  onClose?: () => void
+}
+
+export default function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { inventory } = useFarmStore()
@@ -43,11 +47,26 @@ export default function Sidebar() {
     router.replace('/login')
   }
 
+  function handleNavClick() {
+    onClose?.()
+  }
+
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[220px] bg-white border-r border-stone-200 flex flex-col z-40">
-      {/* Logo */}
-      <div className="px-4 py-4 border-b border-stone-100">
-        <img src="/logo.png" alt="Okesreal Farm" className="h-10 w-auto object-contain" />
+    <aside className={`
+      fixed left-0 top-0 h-screen w-[220px] bg-white border-r border-stone-200 flex flex-col z-40
+      transition-transform duration-300
+      lg:translate-x-0
+      ${open ? 'translate-x-0' : '-translate-x-full'}
+    `}>
+      {/* Logo + mobile close */}
+      <div className="px-4 py-4 border-b border-stone-100 flex items-center justify-between">
+        <img src="/logo.png" alt="Okesreal Farm" className="h-10 w-auto object-contain flex-1 min-w-0" />
+        <button
+          onClick={onClose}
+          className="lg:hidden ml-2 p-1 rounded-lg hover:bg-stone-100 text-stone-400 flex-shrink-0"
+        >
+          <X size={16} />
+        </button>
       </div>
 
       {/* Nav */}
@@ -55,7 +74,12 @@ export default function Sidebar() {
         {visibleNav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
-            <Link key={href} href={href} className={`nav-item ${active ? 'active' : ''}`}>
+            <Link
+              key={href}
+              href={href}
+              onClick={handleNavClick}
+              className={`nav-item ${active ? 'active' : ''}`}
+            >
               <Icon size={15} />
               <span>{label}</span>
               {href === '/inventory' && lowStock > 0 && (
@@ -72,7 +96,7 @@ export default function Sidebar() {
       {user && (
         <div className="p-3 border-t border-stone-100">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center text-[11px] font-medium">
+            <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center text-[11px] font-medium flex-shrink-0">
               {getInitials(user.name)}
             </div>
             <div className="flex-1 min-w-0">

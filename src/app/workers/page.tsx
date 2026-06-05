@@ -28,7 +28,7 @@ export default function WorkersPage() {
   return (
     <Shell>
       <PageHeader title="Workers" subtitle="Staff management and salary information" />
-      <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Total staff</div><div className="kpi-value">{workers.length}</div></div>
         <div className="kpi-card"><div className="kpi-label">Monthly salary bill</div><div className="kpi-value text-red-500">{fmt(totalSalary)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Annual cost</div><div className="kpi-value">{fmt(totalSalary * 12)}</div></div>
