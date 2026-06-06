@@ -2,9 +2,9 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, Egg, Skull, Package, Wheat, Receipt,
+  LayoutDashboard, Egg, Skull, Package, Receipt,
   ShoppingCart, Users, Wallet, Calculator, BarChart3,
-  Settings, LogOut, BarChart2, Grid3x3, X,
+  Settings, LogOut, BarChart2, Grid3x3, X, FlaskConical,
 } from 'lucide-react'
 import { useFarmStore } from '@/store/farmStore'
 import { useAuthStore } from '@/store/authStore'
@@ -16,8 +16,8 @@ const NAV = [
   { href: '/pens',       label: 'Pens',           icon: Grid3x3 },
   { href: '/production', label: 'Production',      icon: Egg },
   { href: '/mortality',  label: 'Mortality',       icon: Skull },
-  { href: '/inventory',  label: 'Inventory',       icon: Package },
-  { href: '/feed',       label: 'Feed costs',      icon: Wheat },
+  { href: '/stock',         label: 'Stock & Inventory',  icon: Package },
+  { href: '/feed-formula',   label: 'Feed Formulation',   icon: FlaskConical },
   { href: '/expenses',   label: 'Expenses',        icon: Receipt },
   { href: '/sales',      label: 'Sales',           icon: ShoppingCart },
   { href: '/workers',    label: 'Workers',         icon: Users },
@@ -82,7 +82,7 @@ export default function Sidebar({ open = false, onClose }: SidebarProps) {
             >
               <Icon size={15} />
               <span>{label}</span>
-              {href === '/inventory' && lowStock > 0 && (
+              {href === '/stock' && lowStock > 0 && (
                 <span className="ml-auto text-[10px] bg-red-100 text-red-600 rounded-full px-1.5 py-0.5 font-medium">
                   {lowStock}
                 </span>

@@ -4,12 +4,12 @@ import type { Role } from '@/lib/constants'
 
 const NAV_ACCESS: Record<Role, string[]> = {
   'Admin': [
-    '/dashboard', '/pens', '/production', '/mortality', '/inventory', '/feed',
+    '/dashboard', '/pens', '/production', '/mortality', '/stock', '/feed-formula',
     '/expenses', '/sales', '/workers', '/payroll', '/pricing',
     '/analytics', '/reports', '/settings',
   ],
   'Farm Manager': [
-    '/dashboard', '/pens', '/production', '/mortality', '/inventory', '/feed',
+    '/dashboard', '/pens', '/production', '/mortality', '/stock', '/feed-formula',
     '/analytics', '/reports',
   ],
   'Accountant': [

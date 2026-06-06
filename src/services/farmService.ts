@@ -110,12 +110,6 @@ export const farmService = {
   addInventory:    (d: Omit<InventoryItem, 'id'>) =>
     api.post<any>('/api/inventory', { ...d, farmId: FARM_ID }).then(normInventory),
   deleteInventory: (id: string) => api.delete(`/api/inventory/${id}`),
-  stockIn:  (inventoryId: string, qty: number, reason: string) =>
-    api.post<any>('/api/inventory/stock-in',  { inventoryId, qty, reason, date: new Date().toISOString().split('T')[0], farmId: FARM_ID }).then(normInventory),
-  stockOut: (inventoryId: string, qty: number, reason: string) =>
-    api.post<any>('/api/inventory/stock-out', { inventoryId, qty, reason, date: new Date().toISOString().split('T')[0], farmId: FARM_ID }).then(normInventory),
-  getMovements: (inventoryId?: string) =>
-    api.get<any[]>(`/api/inventory/movements?farmId=${FARM_ID}${inventoryId ? `&inventoryId=${inventoryId}` : ''}`),
 
   getFeed:         () => api.get<any[]>(`/api/feed?farmId=${FARM_ID}`).then(r => r.map(normFeed)),
   addFeed:         (d: Omit<FeedPurchase, 'id'>) =>
@@ -153,4 +147,27 @@ export const farmService = {
 
   getFarmSettings: () => api.get<FarmSettings>(`/api/farms/${FARM_ID}`),
   updateFarmSettings: (d: Partial<FarmSettings>) => api.patch<FarmSettings>(`/api/farms/${FARM_ID}`, d),
+
+  // Stock (unified inventory + feed)
+  getStock:     () => api.get<any[]>(`/api/stock?farmId=${FARM_ID}`),
+  createStock:  (d: { name: string; category: string; unit: string; minQty: number; supplier?: string }) =>
+    api.post<any>('/api/stock', { ...d, farmId: FARM_ID }),
+  deleteStock:  (id: string) => api.delete(`/api/stock/${id}`),
+  stockIn:      (d: { stockId: string; date: string; qty: number; unitPrice: number; supplier?: string; notes?: string }) =>
+    api.post<any>('/api/stock/in', { ...d, farmId: FARM_ID }),
+  stockOut:     (d: { stockId: string; date: string; qty: number; reason?: string; penId?: string }) =>
+    api.post<any>('/api/stock/out', { ...d, farmId: FARM_ID }),
+  getStockMovements: (stockId?: string) =>
+    api.get<any[]>(`/api/stock/movements?farmId=${FARM_ID}${stockId ? `&stockId=${stockId}` : ''}`),
+  getStockBatches: (stockId: string) =>
+    api.get<any[]>(`/api/stock/${stockId}/batches`),
+
+  // Feed formulation
+  getFormulas:    () => api.get<any[]>(`/api/feed-formula/formulas?farmId=${FARM_ID}`),
+  createFormula:  (d: any) => api.post<any>('/api/feed-formula/formulas', { ...d, farmId: FARM_ID }),
+  deleteFormula:  (id: string) => api.delete(`/api/feed-formula/formulas/${id}`),
+  getBatches:     () => api.get<any[]>(`/api/feed-formula/batches?farmId=${FARM_ID}`),
+  produceBatch:   (d: any) => api.post<any>('/api/feed-formula/batches', { ...d, farmId: FARM_ID }),
+  getUsages:      (batchId?: string) => api.get<any[]>(`/api/feed-formula/usage?farmId=${FARM_ID}${batchId ? `&batchId=${batchId}` : ''}`),
+  recordUsage:    (d: any) => api.post<any>('/api/feed-formula/usage', { ...d, farmId: FARM_ID }),
 }

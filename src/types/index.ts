@@ -28,6 +28,127 @@ export interface MortalityRecord {
   pen?: { id: string; name: string }
 }
 
+export type StockCategory = 'Feed' | 'Medication' | 'Equipment' | 'Supplies' | 'Other'
+
+export interface FeedFormula {
+  id: string
+  name: string
+  description?: string
+  unit: string
+  createdAt: string
+  ingredients: {
+    id: string
+    stockId: string
+    qtyPerUnit: number
+    stock: { id: string; name: string; unit: string }
+  }[]
+  _count?: { batches: number }
+}
+
+export interface FeedBatch {
+  id: string
+  date: string
+  batchNo: string
+  formulaId: string
+  formula?: { name: string; unit: string }
+  qtyProduced: number
+  qtyRemaining: number
+  notes?: string
+  createdAt: string
+  _count?: { usages: number }
+}
+
+export interface FeedUsageRecord {
+  id: string
+  date: string
+  batchId: string
+  batch?: { formula?: { name: string; unit: string } }
+  penId?: string
+  pen?: { name: string }
+  qty: number
+  notes?: string
+  createdAt: string
+}
+
+export interface FeedFormula {
+  id: string
+  name: string
+  description?: string
+  unit: string
+  createdAt: string
+  ingredients: {
+    id: string
+    stockId: string
+    qtyPerUnit: number
+    stock: { id: string; name: string; unit: string }
+  }[]
+  _count?: { batches: number }
+}
+
+export interface FeedBatch {
+  id: string
+  date: string
+  batchNo: string
+  formulaId: string
+  formula?: { name: string; unit: string }
+  qtyProduced: number
+  qtyRemaining: number
+  notes?: string
+  createdAt: string
+  _count?: { usages: number }
+}
+
+export interface FeedUsageRecord {
+  id: string
+  date: string
+  batchId: string
+  batch?: { formula?: { name: string; unit: string } }
+  penId?: string
+  pen?: { name: string }
+  qty: number
+  notes?: string
+  createdAt: string
+}
+
+export interface StockItem {
+  id: string
+  name: string
+  category: StockCategory
+  unit: string
+  minQty: number
+  supplier?: string
+  currentQty: number
+  fifoCostPerUnit: number
+  avgCostPerUnit: number
+  totalValue: number
+  createdAt: string
+}
+
+export interface StockBatch {
+  id: string
+  date: string
+  qty: number
+  remainingQty: number
+  unitPrice: number
+  totalCost: number
+  supplier?: string
+  notes?: string
+  createdAt: string
+}
+
+export interface StockOut {
+  id: string
+  date: string
+  qty: number
+  costUsed: number
+  reason?: string
+  stockId: string
+  penId?: string
+  stock?: { name: string; unit: string }
+  pen?: { name: string }
+  createdAt: string
+}
+
 export interface StockMovement {
   id: string
   date: string
