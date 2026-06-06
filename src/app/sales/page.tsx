@@ -7,7 +7,7 @@ import DeleteBtn from '@/components/ui/DeleteBtn'
 import { useFarmStore, useTotals } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { fmt, fmtN, today } from '@/lib/utils'
-import { Plus, Printer } from 'lucide-react'
+import { Plus, Printer, Loader2 } from 'lucide-react'
 import type { SaleRecord, OtherSaleRecord, EggSize } from '@/types'
 
 const EGG_SIZES: EggSize[] = ['Jumbo', 'Medium', 'Table']
@@ -258,6 +258,8 @@ export default function SalesPage() {
   const [tab, setTab] = useState<'eggs' | 'other'>('eggs')
   const [eggForm, setEggForm] = useState(initEggForm)
   const [otherForm, setOtherForm] = useState(initOtherForm)
+  const [savingEgg, setSavingEgg] = useState(false)
+  const [savingOther, setSavingOther] = useState(false)
   const setE = (k: string, v: string) => setEggForm(f => ({ ...f, [k]: v }))
   const setO = (k: string, v: string) => setOtherForm(f => ({ ...f, [k]: v }))
 
@@ -285,15 +287,19 @@ export default function SalesPage() {
 
   function handleAddEgg() {
     if (!eggForm.date || !eggForm.crates || !eggForm.pricePerCrate) return
+    setSavingEgg(true)
     addSale({ date: eggForm.date, customer: eggForm.customer, size: eggForm.size, crates: Number(eggForm.crates), pricePerCrate: Number(eggForm.pricePerCrate), total: Number(eggForm.total) || Number(eggForm.crates) * Number(eggForm.pricePerCrate), status: eggForm.status as any })
-    setEggForm(initEggForm)
+      .then(() => setEggForm(initEggForm))
+      .finally(() => setSavingEgg(false))
   }
 
   function handleAddOther() {
     if (!otherForm.date || !otherForm.qty || !otherForm.unitPrice) return
+    setSavingOther(true)
     const item = otherForm.item === 'Other' ? otherForm.customItem || 'Other' : otherForm.item
     addOtherSale({ date: otherForm.date, item, qty: Number(otherForm.qty), unit: otherForm.unit, unitPrice: Number(otherForm.unitPrice), total: Number(otherForm.total) || Number(otherForm.qty) * Number(otherForm.unitPrice), customer: otherForm.customer, penId: otherForm.penId || undefined, status: otherForm.status as any })
-    setOtherForm(initOtherForm)
+      .then(() => setOtherForm(initOtherForm))
+      .finally(() => setSavingOther(false))
   }
 
   const sortedEggs = [...sales].sort((a, b) => b.date.localeCompare(a.date))
@@ -352,7 +358,9 @@ export default function SalesPage() {
                   </select>
                 </div>
               </div>
-              <button className="btn btn-primary" onClick={handleAddEgg}><Plus size={14} /> Record sale</button>
+              <button className="btn btn-primary" onClick={handleAddEgg} disabled={savingEgg}>
+                {savingEgg ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Record sale
+              </button>
             </div>
           )}
           <div className="card">
@@ -431,7 +439,7 @@ export default function SalesPage() {
                     <option>Paid</option><option>Unpaid</option><option>Part payment</option>
                   </select>
                 </div>
-                <div className="flex items-end"><button className="btn btn-primary w-full" onClick={handleAddOther}><Plus size={14} /> Record sale</button></div>
+                <div className="flex items-end"><button className="btn btn-primary w-full" onClick={handleAddOther} disabled={savingOther}>{savingOther ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Record sale</button></div>
               </div>
             </div>
           )}

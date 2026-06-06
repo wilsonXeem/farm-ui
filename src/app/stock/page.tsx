@@ -8,7 +8,7 @@ import { useFarmStore } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { farmService } from '@/services/farmService'
 import { fmt, fmtN, today } from '@/lib/utils'
-import { Plus, AlertTriangle, ArrowUpCircle, ArrowDownCircle, History, Package } from 'lucide-react'
+import { Plus, AlertTriangle, ArrowUpCircle, ArrowDownCircle, History, Package, Loader2 } from 'lucide-react'
 import type { StockItem, StockBatch, StockOut } from '@/types'
 
 const CATEGORIES = ['Feed', 'Medication', 'Equipment', 'Supplies', 'Other']
@@ -125,6 +125,7 @@ export default function StockPage() {
   const [selectedItem, setSelectedItem] = useState<StockItem | null>(null)
   const [modal, setModal] = useState<'in' | 'out' | 'batches' | null>(null)
   const [addingItem, setAddingItem] = useState(false)
+  const [savingItem, setSavingItem] = useState(false)
   const [form, setForm] = useState(initItemForm)
   const [tab, setTab] = useState<'stock' | 'movements'>('stock')
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
@@ -147,8 +148,11 @@ export default function StockPage() {
 
   async function handleAddItem() {
     if (!form.name || !form.unit) return
-    await farmService.createStock({ name: form.name, category: CAT_RMAP[form.category], unit: form.unit, minQty: Number(form.minQty), supplier: form.supplier || undefined })
-    setForm(initItemForm); setAddingItem(false); loadItems()
+    setSavingItem(true)
+    try {
+      await farmService.createStock({ name: form.name, category: CAT_RMAP[form.category], unit: form.unit, minQty: Number(form.minQty), supplier: form.supplier || undefined })
+      setForm(initItemForm); setAddingItem(false); loadItems()
+    } finally { setSavingItem(false) }
   }
 
   async function showBatches(item: StockItem) {
@@ -200,7 +204,9 @@ export default function StockPage() {
             <div className="form-group"><label className="form-label">Default supplier</label><input className="input" value={form.supplier} onChange={e => set('supplier', e.target.value)} /></div>
           </div>
           <div className="flex gap-2">
-            <button className="btn btn-primary" onClick={handleAddItem}><Plus size={14} /> Save</button>
+            <button className="btn btn-primary" onClick={handleAddItem} disabled={savingItem}>
+              {savingItem ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Save
+            </button>
             <button className="btn" onClick={() => setAddingItem(false)}>Cancel</button>
           </div>
         </div>

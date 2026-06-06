@@ -7,7 +7,7 @@ import DeleteBtn from '@/components/ui/DeleteBtn'
 import { useFarmStore, usePenTotals } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { fmtN } from '@/lib/utils'
-import { Plus, Bird, User } from 'lucide-react'
+import { Plus, Bird, User, Loader2 } from 'lucide-react'
 
 const initForm = { name: '', totalBirds: '100', workerId: '' }
 
@@ -58,19 +58,27 @@ export default function PensPage() {
   const [form, setForm] = useState(initForm)
   const [assignPenId, setAssignPenId] = useState('')
   const [assignWorkerId, setAssignWorkerId] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [assigning, setAssigning] = useState(false)
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   async function handleAdd() {
     if (!form.name || !form.totalBirds) return
-    await addPen({ name: form.name, totalBirds: Number(form.totalBirds), workerId: form.workerId || undefined } as any)
-    setForm(initForm)
+    setSaving(true)
+    try {
+      await addPen({ name: form.name, totalBirds: Number(form.totalBirds), workerId: form.workerId || undefined } as any)
+      setForm(initForm)
+    } finally { setSaving(false) }
   }
 
   async function handleAssign() {
     if (!assignPenId || !assignWorkerId) return
-    await updatePen(assignPenId, { workerId: assignWorkerId })
-    setAssignPenId('')
-    setAssignWorkerId('')
+    setAssigning(true)
+    try {
+      await updatePen(assignPenId, { workerId: assignWorkerId })
+      setAssignPenId('')
+      setAssignWorkerId('')
+    } finally { setAssigning(false) }
   }
 
   const totalBirds = pens.reduce((s, p) => s + p.totalBirds, 0)
@@ -107,7 +115,9 @@ export default function PensPage() {
                 {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>
-            <button className="btn btn-primary" onClick={handleAdd}><Plus size={14} /> Add pen</button>
+            <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add pen
+            </button>
           </div>
         )}
 
@@ -128,8 +138,8 @@ export default function PensPage() {
                 {workers.map(w => <option key={w.id} value={w.id}>{w.name} — {w.role}</option>)}
               </select>
             </div>
-            <button className="btn btn-primary" onClick={handleAssign} disabled={!assignPenId || !assignWorkerId}>
-              <User size={14} /> Assign
+            <button className="btn btn-primary" onClick={handleAssign} disabled={!assignPenId || !assignWorkerId || assigning}>
+              {assigning ? <Loader2 size={14} className="animate-spin" /> : <User size={14} />} Assign
             </button>
           </div>
         )}

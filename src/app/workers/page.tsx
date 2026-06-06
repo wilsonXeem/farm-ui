@@ -7,7 +7,7 @@ import DeleteBtn from '@/components/ui/DeleteBtn'
 import { useFarmStore } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { fmt, today, getInitials } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 
 const initForm = { name: '', role: '', salary: '', phone: '' }
 
@@ -15,14 +15,18 @@ export default function WorkersPage() {
   const { workers, addWorker, deleteWorker } = useFarmStore()
   const { can } = useRole()
   const [form, setForm] = useState(initForm)
+  const [saving, setSaving] = useState(false)
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   const totalSalary = workers.reduce((s, w) => s + w.salary, 0)
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!form.name || !form.salary) return
-    addWorker({ name: form.name, role: form.role, salary: Number(form.salary), phone: form.phone, employedDate: today() })
-    setForm(initForm)
+    setSaving(true)
+    try {
+      await addWorker({ name: form.name, role: form.role, salary: Number(form.salary), phone: form.phone, employedDate: today() })
+      setForm(initForm)
+    } finally { setSaving(false) }
   }
 
   return (
@@ -45,7 +49,9 @@ export default function WorkersPage() {
           <div className="form-group"><label className="form-label">Monthly salary (₦)</label><input type="number" className="input" value={form.salary} onChange={e => set('salary', e.target.value)} /></div>
           <div className="form-group"><label className="form-label">Phone</label><input className="input" value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
         </div>
-        <button className="btn btn-primary" onClick={handleAdd}><Plus size={14} /> Add worker</button>
+        <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add worker
+        </button>
       </div>
       )}
 

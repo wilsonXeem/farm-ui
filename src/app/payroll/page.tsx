@@ -1,23 +1,28 @@
 'use client'
+import { useState } from 'react'
 import Shell from '@/components/layout/Shell'
 import PageHeader from '@/components/ui/PageHeader'
 import EmptyState from '@/components/ui/EmptyState'
 import { useFarmStore } from '@/store/farmStore'
-import { fmt, fmtN, today, currentMonth, getInitials } from '@/lib/utils'
-import { CheckCircle } from 'lucide-react'
+import { fmt, today, currentMonth, getInitials } from '@/lib/utils'
+import { CheckCircle, Loader2 } from 'lucide-react'
 
 export default function PayrollPage() {
   const { workers, payroll, addPayroll } = useFarmStore()
+  const [paying, setPaying] = useState<string | null>(null)
   const thisMonth = currentMonth()
   const paidThisMonth = payroll.filter(p => p.month === thisMonth)
   const totalPayable = workers.reduce((s, w) => s + w.salary, 0)
   const totalPaid = paidThisMonth.reduce((s, p) => s + p.amount, 0)
   const outstanding = totalPayable - totalPaid
 
-  function markPaid(workerId: string) {
+  async function markPaid(workerId: string) {
     const w = workers.find(x => x.id === workerId)
     if (!w || paidThisMonth.some(p => p.workerId === workerId)) return
-    addPayroll({ workerId, workerName: w.name, amount: w.salary, month: thisMonth, date: today() })
+    setPaying(workerId)
+    try {
+      await addPayroll({ workerId, workerName: w.name, amount: w.salary, month: thisMonth, date: today() })
+    } finally { setPaying(null) }
   }
 
   const monthLabel = new Date().toLocaleString('en-NG', { month: 'long', year: 'numeric' })
@@ -53,8 +58,8 @@ export default function PayrollPage() {
                     <td><span className={`badge ${isPaid ? 'badge-green' : 'badge-red'}`}>{isPaid ? 'Paid' : 'Unpaid'}</span></td>
                     <td>
                       {!isPaid && (
-                        <button className="btn btn-primary text-xs py-1 px-3" onClick={() => markPaid(w.id)}>
-                          <CheckCircle size={12} /> Mark paid
+                        <button className="btn btn-primary text-xs py-1 px-3" onClick={() => markPaid(w.id)} disabled={paying === w.id}>
+                          {paying === w.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />} Mark paid
                         </button>
                       )}
                     </td>

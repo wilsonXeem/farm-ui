@@ -8,7 +8,7 @@ import DeleteBtn from '@/components/ui/DeleteBtn'
 import { useFarmStore } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { fmt, fmtN, today } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 
 import { useStaffPens } from '@/hooks/useStaffPens'
 
@@ -20,6 +20,7 @@ export default function ProductionPage() {
   const { myPens } = useStaffPens()
   const availablePens = can.deleteProduction ? pens : myPens
   const [form, setForm] = useState(initForm)
+  const [saving, setSaving] = useState(false)
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   const total = production.reduce((s, r) => s + r.totalEggs, 0)
@@ -27,17 +28,20 @@ export default function ProductionPage() {
   const cracked = production.reduce((s, r) => s + r.crackedEggs, 0)
   const preview = Math.max(0, Number(form.totalEggs) - Number(form.crackedEggs) - Number(form.spoiltEggs))
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!form.date || !form.totalEggs || !form.penId) return
-    addProduction({
-      date: form.date,
-      totalEggs: Number(form.totalEggs),
-      crackedEggs: Number(form.crackedEggs),
-      spoiltEggs: Number(form.spoiltEggs),
-      notes: form.notes,
-      penId: form.penId,
-    })
-    setForm(initForm)
+    setSaving(true)
+    try {
+      await addProduction({
+        date: form.date,
+        totalEggs: Number(form.totalEggs),
+        crackedEggs: Number(form.crackedEggs),
+        spoiltEggs: Number(form.spoiltEggs),
+        notes: form.notes,
+        penId: form.penId,
+      })
+      setForm(initForm)
+    } finally { setSaving(false) }
   }
 
   const sorted = [...production].sort((a, b) => b.date.localeCompare(a.date))
@@ -90,7 +94,9 @@ export default function ProductionPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button className="btn btn-primary" onClick={handleAdd}><Plus size={14} /> Add record</button>
+            <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add record
+            </button>
             {form.totalEggs && (
               <span className="text-sm text-stone-500">Good eggs: <strong className="text-brand-600">{fmtN(preview)}</strong></span>
             )}

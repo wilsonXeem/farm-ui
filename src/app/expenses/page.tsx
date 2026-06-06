@@ -7,7 +7,7 @@ import DeleteBtn from '@/components/ui/DeleteBtn'
 import { useFarmStore } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { fmt, today } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 import type { ExpenseCategory } from '@/types'
 
 const CATEGORIES: ExpenseCategory[] = ['Fuel', 'Construction', 'Salary', 'Medication', 'Repairs', 'Transport', 'Electricity', 'Water', 'Miscellaneous']
@@ -17,13 +17,17 @@ export default function ExpensesPage() {
   const { expenses, addExpense, deleteExpense } = useFarmStore()
   const { can } = useRole()
   const [form, setForm] = useState(initForm)
+  const [saving, setSaving] = useState(false)
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
   const total = expenses.reduce((s, r) => s + r.amount, 0)
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!form.date || !form.amount) return
-    addExpense({ date: form.date, category: form.category, amount: Number(form.amount), description: form.description })
-    setForm(initForm)
+    setSaving(true)
+    try {
+      await addExpense({ date: form.date, category: form.category, amount: Number(form.amount), description: form.description })
+      setForm(initForm)
+    } finally { setSaving(false) }
   }
 
   const byCategory = CATEGORIES.map(c => ({
@@ -70,7 +74,9 @@ export default function ExpensesPage() {
               reader.readAsDataURL(file)
             }} />
         </div>
-        <button className="btn btn-primary" onClick={handleAdd}><Plus size={14} /> Add expense</button>
+        <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add expense
+        </button>
       </div>
       )}
 

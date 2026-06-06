@@ -8,7 +8,7 @@ import DeleteBtn from '@/components/ui/DeleteBtn'
 import { useFarmStore, useTotals } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { fmtN, today } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 
 import { useStaffPens } from '@/hooks/useStaffPens'
 
@@ -22,12 +22,15 @@ export default function MortalityPage() {
   const { myPens } = useStaffPens()
   const availablePens = can.deleteMortality ? pens : myPens
   const [form, setForm] = useState(initForm)
+  const [saving, setSaving] = useState(false)
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   function handleAdd() {
     if (!form.date || !form.count || !form.penId) return
+    setSaving(true)
     addMortality({ date: form.date, count: Number(form.count), cause: form.cause, notes: form.notes, penId: form.penId })
-    setForm(initForm)
+      .then(() => setForm(initForm))
+      .finally(() => setSaving(false))
   }
 
   const sorted = [...mortality].sort((a, b) => b.date.localeCompare(a.date))
@@ -94,7 +97,9 @@ export default function MortalityPage() {
             <label className="form-label">Notes</label>
             <input type="text" className="input" placeholder="Details..." value={form.notes} onChange={e => set('notes', e.target.value)} />
           </div>
-          <button className="btn btn-primary" onClick={handleAdd}><Plus size={14} /> Record</button>
+          <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Record
+          </button>
         </div>
       )}
 
