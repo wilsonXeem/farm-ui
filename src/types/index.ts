@@ -1,3 +1,13 @@
+export interface BirdEntry {
+  id: string
+  date: string
+  count: number
+  notes?: string
+  penId: string
+  pen?: { name: string }
+  createdAt: string
+}
+
 export interface Pen {
   id: string
   name: string

@@ -26,7 +26,9 @@ export default function ProductionPage() {
   const total = production.reduce((s, r) => s + r.totalEggs, 0)
   const good = production.reduce((s, r) => s + r.goodEggs, 0)
   const cracked = production.reduce((s, r) => s + r.crackedEggs, 0)
+  const goodCrates = Math.floor(good / 30)
   const preview = Math.max(0, Number(form.totalEggs) - Number(form.crackedEggs) - Number(form.spoiltEggs))
+  const previewCrates = Math.floor(preview / 30)
 
   async function handleAdd() {
     if (!form.date || !form.totalEggs || !form.penId) return
@@ -53,8 +55,8 @@ export default function ProductionPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <KpiCard label="Total eggs produced" value={fmtN(total)} />
         <KpiCard label="Good eggs" value={fmtN(good)} color="green" />
+        <KpiCard label="Good crates" value={fmtN(goodCrates)} sub={`${fmtN(good % 30)} loose`} color="green" />
         <KpiCard label="Cracked eggs" value={fmtN(cracked)} color="red" />
-        <KpiCard label="Records" value={String(production.length)} />
       </div>
 
       {can.writeProduction && (
@@ -98,7 +100,10 @@ export default function ProductionPage() {
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add record
             </button>
             {form.totalEggs && (
-              <span className="text-sm text-stone-500">Good eggs: <strong className="text-brand-600">{fmtN(preview)}</strong></span>
+              <span className="text-sm text-stone-500">
+                Good eggs: <strong className="text-brand-600">{fmtN(preview)}</strong>
+                {preview >= 30 && <> · Crates: <strong className="text-brand-600">{fmtN(previewCrates)}</strong> <span className="text-stone-400">+ {preview % 30} loose</span></>}
+              </span>
             )}
           </div>
         </div>
@@ -110,7 +115,7 @@ export default function ProductionPage() {
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
-                <tr><th>Date</th><th>Pen</th><th>Total</th><th>Cracked</th><th>Spoilt</th><th>Good eggs</th><th>Notes</th><th></th></tr>
+                <tr><th>Date</th><th>Pen</th><th>Total</th><th>Cracked</th><th>Spoilt</th><th>Good eggs</th><th>Crates</th><th>Notes</th><th></th></tr>
               </thead>
               <tbody>
                 {sorted.map(r => (
@@ -121,6 +126,10 @@ export default function ProductionPage() {
                     <td className="text-red-500">{fmtN(r.crackedEggs)}</td>
                     <td className="text-amber-600">{fmtN(r.spoiltEggs)}</td>
                     <td><strong className="text-brand-600">{fmtN(r.goodEggs)}</strong></td>
+                    <td className="text-stone-500">
+                      <strong>{Math.floor(r.goodEggs / 30)}</strong>
+                      <span className="text-stone-400 text-xs"> + {r.goodEggs % 30}</span>
+                    </td>
                     <td className="text-stone-400">{r.notes || '—'}</td>
                     <td>{can.deleteProduction && <DeleteBtn onDelete={() => deleteProduction(r.id)} />}</td>
                   </tr>

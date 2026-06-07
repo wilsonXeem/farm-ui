@@ -144,6 +144,10 @@ export const farmService = {
   addPen:     (d: Omit<Pen, 'id'>) => api.post<Pen>('/api/pens', { ...d, farmId: FARM_ID }),
   updatePen:  (id: string, d: Partial<Pen>) => api.patch<Pen>(`/api/pens/${id}`, d),
   deletePen:  (id: string) => api.delete(`/api/pens/${id}`),
+  addBirds:   (penId: string, d: { date: string; count: number; notes?: string }) =>
+    api.post<any>(`/api/pens/${penId}/birds`, { ...d, farmId: FARM_ID }),
+  getBirdEntries: (penId: string) => api.get<any[]>(`/api/pens/${penId}/birds`),
+  getAllBirdEntries: () => api.get<any[]>(`/api/pens/bird-entries?farmId=${FARM_ID}`),
 
   getFarmSettings: () => api.get<FarmSettings>(`/api/farms/${FARM_ID}`),
   updateFarmSettings: (d: Partial<FarmSettings>) => api.patch<FarmSettings>(`/api/farms/${FARM_ID}`, d),

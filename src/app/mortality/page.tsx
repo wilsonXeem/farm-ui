@@ -28,9 +28,9 @@ export default function MortalityPage() {
   function handleAdd() {
     if (!form.date || !form.count || !form.penId) return
     setSaving(true)
-    addMortality({ date: form.date, count: Number(form.count), cause: form.cause, notes: form.notes, penId: form.penId })
-      .then(() => setForm(initForm))
-      .finally(() => setSaving(false))
+    Promise.resolve(
+      addMortality({ date: form.date, count: Number(form.count), cause: form.cause, notes: form.notes, penId: form.penId })
+    ).then(() => setForm(initForm)).finally(() => setSaving(false))
   }
 
   const sorted = [...mortality].sort((a, b) => b.date.localeCompare(a.date))

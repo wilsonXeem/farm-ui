@@ -288,18 +288,18 @@ export default function SalesPage() {
   function handleAddEgg() {
     if (!eggForm.date || !eggForm.crates || !eggForm.pricePerCrate) return
     setSavingEgg(true)
-    addSale({ date: eggForm.date, customer: eggForm.customer, size: eggForm.size, crates: Number(eggForm.crates), pricePerCrate: Number(eggForm.pricePerCrate), total: Number(eggForm.total) || Number(eggForm.crates) * Number(eggForm.pricePerCrate), status: eggForm.status as any })
-      .then(() => setEggForm(initEggForm))
-      .finally(() => setSavingEgg(false))
+    Promise.resolve(
+      addSale({ date: eggForm.date, customer: eggForm.customer, size: eggForm.size, crates: Number(eggForm.crates), pricePerCrate: Number(eggForm.pricePerCrate), total: Number(eggForm.total) || Number(eggForm.crates) * Number(eggForm.pricePerCrate), status: eggForm.status as any })
+    ).then(() => setEggForm(initEggForm)).finally(() => setSavingEgg(false))
   }
 
   function handleAddOther() {
     if (!otherForm.date || !otherForm.qty || !otherForm.unitPrice) return
     setSavingOther(true)
     const item = otherForm.item === 'Other' ? otherForm.customItem || 'Other' : otherForm.item
-    addOtherSale({ date: otherForm.date, item, qty: Number(otherForm.qty), unit: otherForm.unit, unitPrice: Number(otherForm.unitPrice), total: Number(otherForm.total) || Number(otherForm.qty) * Number(otherForm.unitPrice), customer: otherForm.customer, penId: otherForm.penId || undefined, status: otherForm.status as any })
-      .then(() => setOtherForm(initOtherForm))
-      .finally(() => setSavingOther(false))
+    Promise.resolve(
+      addOtherSale({ date: otherForm.date, item, qty: Number(otherForm.qty), unit: otherForm.unit, unitPrice: Number(otherForm.unitPrice), total: Number(otherForm.total) || Number(otherForm.qty) * Number(otherForm.unitPrice), customer: otherForm.customer, penId: otherForm.penId || undefined, status: otherForm.status as any })
+    ).then(() => setOtherForm(initOtherForm)).finally(() => setSavingOther(false))
   }
 
   const sortedEggs = [...sales].sort((a, b) => b.date.localeCompare(a.date))

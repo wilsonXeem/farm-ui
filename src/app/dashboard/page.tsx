@@ -44,8 +44,8 @@ function StaffDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <KpiCard label="Birds available" value={fmtN(availableBirds)} sub={`of ${fmtN(totalBirds)} total`} color="blue" />
         <KpiCard label="Total deaths" value={fmtN(totalDeaths)} color="red" />
-        <KpiCard label="Good eggs (total)" value={fmtN(totalGoodEggs)} color="green" />
-        <KpiCard label="Eggs today" value={fmtN(todayEggs)} />
+        <KpiCard label="Good eggs (total)" value={fmtN(totalGoodEggs)} sub={`${Math.floor(totalGoodEggs / 30)} crates + ${totalGoodEggs % 30} loose`} color="green" />
+        <KpiCard label="Eggs today" value={fmtN(todayEggs)} sub={todayEggs >= 30 ? `${Math.floor(todayEggs / 30)} crates` : undefined} />
       </div>
 
       {/* Per-pen breakdown */}
@@ -225,8 +225,8 @@ function AdminDashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <KpiCard label="Birds available" value={fmtN(t.availableBirds)} sub={`of ${fmtN(t.totalBirds)} total`} color="blue" />
-        <KpiCard label="Good eggs (total)" value={fmtN(t.goodEggs)} sub={production.length > 1 ? fmtN(Math.round(t.goodEggs / production.length)) + ' daily avg' : ''} />
-        <KpiCard label="Eggs today" value={fmtN(todayEggs)} />
+        <KpiCard label="Good eggs (total)" value={fmtN(t.goodEggs)} sub={`${fmtN(Math.floor(t.goodEggs / 30))} crates + ${t.goodEggs % 30} loose`} />
+        <KpiCard label="Eggs today" value={fmtN(todayEggs)} sub={todayEggs >= 30 ? `${Math.floor(todayEggs / 30)} crates` : undefined} />
         <KpiCard label="Cost per egg" value={fmt(t.costPerEgg)} sub={`Crate: ${fmt(t.costPerCrate)}`} />
         <KpiCard label="Total revenue" value={fmt(t.totalRevenue)} color="green" />
         <KpiCard label="Total expenses" value={fmt(t.totalExpenses)} color="red" />
