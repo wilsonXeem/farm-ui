@@ -239,6 +239,7 @@ export interface Worker {
   id: string
   name: string
   role: string
+  type: 'Permanent' | 'Auxiliary'
   salary: number
   phone?: string
   employedDate: string
@@ -280,6 +281,7 @@ export interface FarmStore {
   addOtherSale: (r: Omit<OtherSaleRecord, 'id'>) => void
   deleteOtherSale: (id: string) => void
   addWorker: (r: Omit<Worker, 'id'>) => void
+  updateWorker: (id: string, r: Partial<Omit<Worker, 'id'>>) => void
   deleteWorker: (id: string) => void
   addPayroll: (r: Omit<PayrollRecord, 'id'>) => void
   addPen: (r: Omit<Pen, 'id'>) => void

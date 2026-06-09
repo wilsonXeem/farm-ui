@@ -137,6 +137,10 @@ export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
     const rec = await farmService.addWorker(r)
     set(s => ({ workers: [rec, ...s.workers] }))
   },
+  updateWorker: async (id, r) => {
+    const rec = await farmService.updateWorker(id, r)
+    set(s => ({ workers: s.workers.map(w => w.id === id ? rec : w) }))
+  },
   deleteWorker: async (id) => {
     await farmService.deleteWorker(id)
     set(s => ({ workers: s.workers.filter(x => x.id !== id) }))
@@ -162,12 +166,11 @@ export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
 }))
 
 export function useTotals() {
-  const { production, expenses, feed, sales, otherSales, workers, mortality, pens } = useFarmStore()
+  const { production, expenses, sales, otherSales, workers, mortality, pens, payroll } = useFarmStore()
   const goodEggs = production.reduce((s, r) => s + r.goodEggs, 0)
-  const feedCost = feed.reduce((s, r) => s + r.totalCost, 0)
-  const salaryCost = workers.reduce((s, w) => s + w.salary, 0)
+  const salaryCost = payroll.reduce((s, p) => s + p.amount, 0)
   const otherCost = expenses.reduce((s, r) => s + r.amount, 0)
-  const totalExpenses = feedCost + salaryCost + otherCost
+  const totalExpenses = salaryCost + otherCost
   const eggRevenue = sales.reduce((s, r) => s + r.total, 0)
   const otherRevenue = (otherSales ?? []).reduce((s, r) => s + r.total, 0)
   const totalRevenue = eggRevenue + otherRevenue
@@ -177,8 +180,19 @@ export function useTotals() {
   const totalBirds = pens.reduce((s, p) => s + p.totalBirds, 0)
   const totalMortality = mortality.reduce((s, r) => s + r.count, 0)
   const availableBirds = totalBirds - totalMortality
-  const unpaidDebt = [...sales, ...(otherSales ?? [])].filter(s => s.status === 'Unpaid').reduce((s, r) => s + r.total, 0)
-  return { goodEggs, feedCost, salaryCost, otherCost, totalExpenses, eggRevenue, otherRevenue, totalRevenue, profit, costPerEgg, costPerCrate, availableBirds, totalMortality, unpaidDebt, totalBirds }
+  const unpaidDebt = [...sales, ...(otherSales ?? [])]
+    .filter(s => s.status === 'Unpaid')
+    .reduce((s, r) => s + r.total, 0)
+  const monthlySalaryBill = workers.reduce((s, w) => s + w.salary, 0)
+  // Expense breakdown by category
+  const expByCategory = (cat: string) => expenses.filter(e => e.category === cat).reduce((s, r) => s + r.amount, 0)
+  return {
+    goodEggs, salaryCost, otherCost, totalExpenses,
+    eggRevenue, otherRevenue, totalRevenue,
+    profit, costPerEgg, costPerCrate,
+    availableBirds, totalMortality, unpaidDebt, totalBirds,
+    monthlySalaryBill, expByCategory,
+  }
 }
 
 export function usePenTotals(penId: string) {

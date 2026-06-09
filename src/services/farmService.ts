@@ -85,8 +85,10 @@ const normOtherSale = (r: any): OtherSaleRecord => ({
 })
 
 const normWorker = (r: any): Worker => ({
-  id: r.id, name: r.name, role: r.role, salary: r.salary,
-  phone: r.phone, employedDate: dateStr(r.employedDate),
+  id: r.id, name: r.name, role: r.role,
+  type: r.type ?? 'Permanent',
+  salary: r.salary, phone: r.phone,
+  employedDate: dateStr(r.employedDate),
 })
 
 const normPayroll = (r: any): PayrollRecord => ({
@@ -134,6 +136,8 @@ export const farmService = {
   getWorkers:      () => api.get<any[]>(`/api/workers?farmId=${FARM_ID}`).then(r => r.map(normWorker)),
   addWorker:       (d: Omit<Worker, 'id'>) =>
     api.post<any>('/api/workers', { ...d, farmId: FARM_ID }).then(normWorker),
+  updateWorker:    (id: string, d: Partial<Omit<Worker, 'id'>>) =>
+    api.patch<any>(`/api/workers/${id}`, d).then(normWorker),
   deleteWorker:    (id: string) => api.delete(`/api/workers/${id}`),
 
   getPayroll:      () => api.get<any[]>(`/api/payroll?farmId=${FARM_ID}`).then(r => r.map(normPayroll)),

@@ -7,13 +7,13 @@ import { fmt, fmtN } from '@/lib/utils'
 import { AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react'
 
 export default function PricingPage() {
-  const { feed, workers, expenses, sales } = useFarmStore()
+  const { expenses, sales, payroll, workers } = useFarmStore()
   const t = useTotals()
   const [margin, setMargin] = useState(25)
   const [eggCount, setEggCount] = useState(1000)
 
-  const feedCost = feed.reduce((s, r) => s + r.totalCost, 0)
-  const salaryCost = workers.reduce((s, w) => s + w.salary, 0)
+  const salaryCost = payroll.reduce((s, p) => s + p.amount, 0)
+  const monthlySalaryBill = workers.reduce((s, w) => s + w.salary, 0)
   const otherCost = expenses.reduce((s, r) => s + r.amount, 0)
 
   const suggestedPerEgg = t.costPerEgg * (1 + margin / 100)
@@ -49,8 +49,8 @@ export default function PricingPage() {
         <div className="card">
           <div className="section-title">Cost breakdown</div>
           <div className="space-y-0">
-            <div className="pricing-row"><span className="text-stone-500">Feed purchases</span><span className="text-red-500">{fmt(feedCost)}</span></div>
-            <div className="pricing-row"><span className="text-stone-500">Workers salaries</span><span className="text-red-500">{fmt(salaryCost)}</span></div>
+            <div className="pricing-row"><span className="text-stone-500">Salaries paid</span><span className="text-red-500">{fmt(salaryCost)}</span></div>
+            <div className="pricing-row"><span className="text-stone-500">Monthly salary bill</span><span className="text-stone-400 text-xs">{fmt(monthlySalaryBill)}/mo</span></div>
             <div className="pricing-row"><span className="text-stone-500">Other expenses</span><span className="text-red-500">{fmt(otherCost)}</span></div>
             <div className="pricing-row"><span className="font-medium">Total expenses</span><span className="font-medium text-red-500">{fmt(t.totalExpenses)}</span></div>
             <div className="h-3" />

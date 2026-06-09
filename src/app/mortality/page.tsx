@@ -12,7 +12,7 @@ import { Plus, Loader2 } from 'lucide-react'
 
 import { useStaffPens } from '@/hooks/useStaffPens'
 
-const CAUSES = ['Disease', 'Heat stress', 'Predator', 'Unknown', 'Other']
+const CAUSES = ['Disease', 'Heat stress', 'Predator', 'Hanging', 'Unknown', 'Other']
 const initForm = { date: today(), count: '', cause: 'Disease', notes: '', penId: '' }
 
 export default function MortalityPage() {

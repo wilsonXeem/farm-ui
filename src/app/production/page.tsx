@@ -12,7 +12,7 @@ import { Plus, Loader2 } from 'lucide-react'
 
 import { useStaffPens } from '@/hooks/useStaffPens'
 
-const initForm = { date: today(), totalEggs: '', crackedEggs: '0', spoiltEggs: '0', notes: '', penId: '' }
+const initForm = { date: today(), inputMode: 'pieces' as 'pieces' | 'crates', totalEggs: '', crackedEggs: '0', spoiltEggs: '0', crackedMode: 'pieces' as 'pieces' | 'crates', notes: '', penId: '' }
 
 export default function ProductionPage() {
   const { production, pens, addProduction, deleteProduction } = useFarmStore()
@@ -27,7 +27,11 @@ export default function ProductionPage() {
   const good = production.reduce((s, r) => s + r.goodEggs, 0)
   const cracked = production.reduce((s, r) => s + r.crackedEggs, 0)
   const goodCrates = Math.floor(good / 30)
-  const preview = Math.max(0, Number(form.totalEggs) - Number(form.crackedEggs) - Number(form.spoiltEggs))
+
+  // Convert inputs to pieces for storage
+  const totalEggsPieces = form.inputMode === 'crates' ? Math.round(Number(form.totalEggs) * 30) : Number(form.totalEggs)
+  const crackedPieces = form.crackedMode === 'crates' ? Math.round(Number(form.crackedEggs) * 30) : Number(form.crackedEggs)
+  const preview = Math.max(0, totalEggsPieces - crackedPieces - Number(form.spoiltEggs))
   const previewCrates = Math.floor(preview / 30)
 
   async function handleAdd() {
@@ -36,8 +40,8 @@ export default function ProductionPage() {
     try {
       await addProduction({
         date: form.date,
-        totalEggs: Number(form.totalEggs),
-        crackedEggs: Number(form.crackedEggs),
+        totalEggs: totalEggsPieces,
+        crackedEggs: crackedPieces,
         spoiltEggs: Number(form.spoiltEggs),
         notes: form.notes,
         penId: form.penId,
@@ -78,11 +82,25 @@ export default function ProductionPage() {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Total eggs produced</label>
-              <input type="number" className="input" placeholder="e.g. 90" value={form.totalEggs} onChange={e => set('totalEggs', e.target.value)} />
+              <div className="flex gap-1 mb-1">
+                <button type="button" className={`btn text-xs py-0.5 px-2 ${form.inputMode === 'pieces' ? 'btn-primary' : ''}`} onClick={() => set('inputMode', 'pieces')}>Pieces</button>
+                <button type="button" className={`btn text-xs py-0.5 px-2 ${form.inputMode === 'crates' ? 'btn-primary' : ''}`} onClick={() => set('inputMode', 'crates')}>Crates</button>
+              </div>
+              <input type="number" className="input" placeholder={form.inputMode === 'crates' ? 'e.g. 3 crates' : 'e.g. 90 pieces'} value={form.totalEggs} onChange={e => set('totalEggs', e.target.value)} />
+              {form.totalEggs && form.inputMode === 'crates' && (
+                <span className="text-xs text-stone-400 mt-1 block">{fmtN(totalEggsPieces)} pieces</span>
+              )}
             </div>
             <div className="form-group">
               <label className="form-label">Cracked eggs</label>
+              <div className="flex gap-1 mb-1">
+                <button type="button" className={`btn text-xs py-0.5 px-2 ${form.crackedMode === 'pieces' ? 'btn-primary' : ''}`} onClick={() => set('crackedMode', 'pieces')}>Pieces</button>
+                <button type="button" className={`btn text-xs py-0.5 px-2 ${form.crackedMode === 'crates' ? 'btn-primary' : ''}`} onClick={() => set('crackedMode', 'crates')}>Crates</button>
+              </div>
               <input type="number" className="input" value={form.crackedEggs} onChange={e => set('crackedEggs', e.target.value)} />
+              {form.crackedEggs && Number(form.crackedEggs) > 0 && form.crackedMode === 'crates' && (
+                <span className="text-xs text-stone-400 mt-1 block">{fmtN(crackedPieces)} pieces</span>
+              )}
             </div>
           </div>
           <div className="form-row">
