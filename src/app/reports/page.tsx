@@ -58,6 +58,8 @@ export default function ReportsPage() {
   })
 
   const totalEggs = rows.reduce((s, r) => s + r.eggs, 0)
+  const totalCrates = Math.floor(totalEggs / 30)
+  const totalLoose = totalEggs % 30
   const totalExp = rows.reduce((s, r) => s + r.exp, 0)
   const totalRev = rows.reduce((s, r) => s + r.rev, 0)
   const totalProfit = totalRev - totalExp
@@ -79,6 +81,7 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Good eggs</div><div className="kpi-value">{fmtN(totalEggs)}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Crates</div><div className="kpi-value text-brand-600">{fmtN(totalCrates)}<span className="text-xs text-stone-400 font-normal"> + {totalLoose}</span></div></div>
         {!isStaff && <>
           <div className="kpi-card"><div className="kpi-label">Total expenses</div><div className="kpi-value text-red-500">{fmt(totalExp)}</div></div>
           <div className="kpi-card"><div className="kpi-label">Total revenue</div><div className="kpi-value text-brand-600">{fmt(totalRev)}</div></div>
@@ -97,6 +100,7 @@ export default function ReportsPage() {
               <tr>
                 <th>Period</th>
                 <th>Good eggs</th>
+                <th>Crates</th>
                 {!isStaff && <><th>Expenses</th><th>Revenue</th><th>Profit / loss</th></>}
                 <th>Mortality</th>
               </tr>
@@ -106,6 +110,10 @@ export default function ReportsPage() {
                 <tr key={r.label}>
                   <td className="font-medium">{r.label}</td>
                   <td>{fmtN(r.eggs)}</td>
+                  <td className="font-medium text-brand-600">
+                    {Math.floor(r.eggs / 30)}
+                    {r.eggs % 30 > 0 && <span className="text-stone-400 text-xs"> + {r.eggs % 30}</span>}
+                  </td>
                   {!isStaff && <>
                     <td className="text-red-400">{fmt(r.exp)}</td>
                     <td className="text-brand-600">{fmt(r.rev)}</td>

@@ -49,7 +49,6 @@ export interface FeedFormula {
   ingredients: {
     id: string
     stockId: string
-    qtyPerUnit: number
     stock: { id: string; name: string; unit: string }
   }[]
   _count?: { batches: number }
@@ -72,47 +71,7 @@ export interface FeedUsageRecord {
   id: string
   date: string
   batchId: string
-  batch?: { formula?: { name: string; unit: string } }
-  penId?: string
-  pen?: { name: string }
-  qty: number
-  notes?: string
-  createdAt: string
-}
-
-export interface FeedFormula {
-  id: string
-  name: string
-  description?: string
-  unit: string
-  createdAt: string
-  ingredients: {
-    id: string
-    stockId: string
-    qtyPerUnit: number
-    stock: { id: string; name: string; unit: string }
-  }[]
-  _count?: { batches: number }
-}
-
-export interface FeedBatch {
-  id: string
-  date: string
-  batchNo: string
-  formulaId: string
-  formula?: { name: string; unit: string }
-  qtyProduced: number
-  qtyRemaining: number
-  notes?: string
-  createdAt: string
-  _count?: { usages: number }
-}
-
-export interface FeedUsageRecord {
-  id: string
-  date: string
-  batchId: string
-  batch?: { formula?: { name: string; unit: string } }
+  batch?: { batchNo?: string; formula?: { name: string; unit: string } }
   penId?: string
   pen?: { name: string }
   qty: number

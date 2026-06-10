@@ -4,7 +4,7 @@ import Shell from '@/components/layout/Shell'
 import PageHeader from '@/components/ui/PageHeader'
 import { useFarmStore } from '@/store/farmStore'
 import { useAuthStore } from '@/store/authStore'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Loader2 } from 'lucide-react'
 import { ROLES } from '@/lib/constants'
 import { farmService } from '@/services/farmService'
 import { fmt } from '@/lib/utils'
@@ -22,6 +22,9 @@ export default function SettingsPage() {
     priceJumbo: 0,
     priceMedium: 0,
     priceTable: 0,
+    bankName: '',
+    bankAccount: '',
+    bankAccountName: '',
   })
 
   useEffect(() => {
@@ -33,6 +36,9 @@ export default function SettingsPage() {
         priceJumbo: farmSettings.priceJumbo ?? 0,
         priceMedium: farmSettings.priceMedium ?? 0,
         priceTable: farmSettings.priceTable ?? 0,
+        bankName: farmSettings.bankName ?? '',
+        bankAccount: farmSettings.bankAccount ?? '',
+        bankAccountName: farmSettings.bankAccountName ?? '',
       })
     }
   }, [farmSettings])
@@ -100,13 +106,32 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Bank account */}
+            <div className="card mb-4">
+              <div className="section-title">Bank account (for invoices)</div>
+              <div className="space-y-3">
+                <div className="form-group">
+                  <label className="form-label">Bank name</label>
+                  <input className="input" placeholder="e.g. First Bank" value={form.bankName} onChange={e => setForm(f => ({ ...f, bankName: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Account number</label>
+                  <input className="input" placeholder="e.g. 3012345678" value={form.bankAccount} onChange={e => setForm(f => ({ ...f, bankAccount: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Account name</label>
+                  <input className="input" placeholder="e.g. Okesreal Farm Ltd" value={form.bankAccountName} onChange={e => setForm(f => ({ ...f, bankAccountName: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+
             {saved && (
               <div className="alert alert-success py-2 mb-3">
                 <CheckCircle size={14} /> Settings saved successfully
               </div>
             )}
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : 'Save changes'}
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />} Save changes
             </button>
           </form>
         </div>

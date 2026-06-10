@@ -93,7 +93,7 @@ export default function ExpensesPage() {
                     <td><span className="badge badge-amber">{r.category}</span></td>
                     <td className="font-medium text-red-500">{fmt(r.amount)}</td>
                     <td className="text-stone-400">{r.description || '—'}</td>
-                    <td>{can.writeExpenses && <DeleteBtn onDelete={() => deleteExpense(r.id)} />}</td>
+                    <td>{can.deleteExpenses && <DeleteBtn onDelete={() => deleteExpense(r.id)} />}</td>
                   </tr>
                 ))}
               </tbody>

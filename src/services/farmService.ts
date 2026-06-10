@@ -14,6 +14,9 @@ export interface FarmSettings {
   priceJumbo: number
   priceMedium: number
   priceTable: number
+  bankName: string
+  bankAccount: string
+  bankAccountName: string
 }
 
 const dateStr = (d: string) => d?.split('T')[0] ?? d
@@ -126,6 +129,8 @@ export const farmService = {
   getSales:        () => api.get<any[]>(`/api/sales?farmId=${FARM_ID}`).then(r => r.map(normSale)),
   addSale:         (d: Omit<SaleRecord, 'id'>) =>
     api.post<any>('/api/sales', { ...d, size: SIZE_RMAP[d.size] ?? d.size, status: STATUS_RMAP[d.status] ?? d.status, farmId: FARM_ID }).then(normSale),
+  updateSaleStatus: (id: string, status: string) =>
+    api.patch<any>(`/api/sales/${id}/status`, { status: STATUS_RMAP[status] ?? status }).then(normSale),
   deleteSale:      (id: string) => api.delete(`/api/sales/${id}`),
 
   getOtherSales:    () => api.get<any[]>(`/api/other-sales?farmId=${FARM_ID}`).then(r => r.map(normOtherSale)),
@@ -172,7 +177,8 @@ export const farmService = {
 
   // Feed formulation
   getFormulas:    () => api.get<any[]>(`/api/feed-formula/formulas?farmId=${FARM_ID}`),
-  createFormula:  (d: any) => api.post<any>('/api/feed-formula/formulas', { ...d, farmId: FARM_ID }),
+  createFormula:  (d: { name: string; description?: string; unit?: string; ingredients: { stockId: string }[] }) =>
+    api.post<any>('/api/feed-formula/formulas', { ...d, farmId: FARM_ID }),
   deleteFormula:  (id: string) => api.delete(`/api/feed-formula/formulas/${id}`),
   getBatches:     () => api.get<any[]>(`/api/feed-formula/batches?farmId=${FARM_ID}`),
   produceBatch:   (d: any) => api.post<any>('/api/feed-formula/batches', { ...d, farmId: FARM_ID }),

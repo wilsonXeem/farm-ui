@@ -9,10 +9,14 @@ import { useFarmStore } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { fmt, fmtN, today } from '@/lib/utils'
 import { Plus, Loader2 } from 'lucide-react'
-
 import { useStaffPens } from '@/hooks/useStaffPens'
 
-const initForm = { date: today(), inputMode: 'pieces' as 'pieces' | 'crates', totalEggs: '', crackedEggs: '0', spoiltEggs: '0', crackedMode: 'pieces' as 'pieces' | 'crates', notes: '', penId: '' }
+const initForm = {
+  date: today(), penId: '',
+  totalCrates: '', totalLoose: '',
+  crackedCrates: '0', crackedLoose: '0',
+  spoiltEggs: '0', notes: '',
+}
 
 export default function ProductionPage() {
   const { production, pens, addProduction, deleteProduction } = useFarmStore()
@@ -28,14 +32,17 @@ export default function ProductionPage() {
   const cracked = production.reduce((s, r) => s + r.crackedEggs, 0)
   const goodCrates = Math.floor(good / 30)
 
-  // Convert inputs to pieces for storage
-  const totalEggsPieces = form.inputMode === 'crates' ? Math.round(Number(form.totalEggs) * 30) : Number(form.totalEggs)
-  const crackedPieces = form.crackedMode === 'crates' ? Math.round(Number(form.crackedEggs) * 30) : Number(form.crackedEggs)
+  // Combine crates + loose into total pieces
+  const totalEggsPieces = (Number(form.totalCrates) * 30) + Number(form.totalLoose)
+  const crackedPieces = (Number(form.crackedCrates) * 30) + Number(form.crackedLoose)
   const preview = Math.max(0, totalEggsPieces - crackedPieces - Number(form.spoiltEggs))
   const previewCrates = Math.floor(preview / 30)
+  const previewLoose = preview % 30
+
+  const hasInput = form.totalCrates || form.totalLoose
 
   async function handleAdd() {
-    if (!form.date || !form.totalEggs || !form.penId) return
+    if (!form.date || !totalEggsPieces || !form.penId) return
     setSaving(true)
     try {
       await addProduction({
@@ -66,6 +73,7 @@ export default function ProductionPage() {
       {can.writeProduction && (
         <div className="card mb-4">
           <div className="section-title">Record daily production</div>
+
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Date</label>
@@ -79,48 +87,66 @@ export default function ProductionPage() {
               </select>
             </div>
           </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Total eggs produced</label>
-              <div className="flex gap-1 mb-1">
-                <button type="button" className={`btn text-xs py-0.5 px-2 ${form.inputMode === 'pieces' ? 'btn-primary' : ''}`} onClick={() => set('inputMode', 'pieces')}>Pieces</button>
-                <button type="button" className={`btn text-xs py-0.5 px-2 ${form.inputMode === 'crates' ? 'btn-primary' : ''}`} onClick={() => set('inputMode', 'crates')}>Crates</button>
+
+          {/* Total eggs — crates + loose */}
+          <div className="mb-3">
+            <label className="form-label">Total eggs produced</label>
+            <div className="flex gap-2 items-center">
+              <div className="flex-1">
+                <input type="number" className="input" placeholder="Crates" min={0} value={form.totalCrates} onChange={e => set('totalCrates', e.target.value)} />
+                <span className="text-xs text-stone-400 mt-0.5 block text-center">crates</span>
               </div>
-              <input type="number" className="input" placeholder={form.inputMode === 'crates' ? 'e.g. 3 crates' : 'e.g. 90 pieces'} value={form.totalEggs} onChange={e => set('totalEggs', e.target.value)} />
-              {form.totalEggs && form.inputMode === 'crates' && (
-                <span className="text-xs text-stone-400 mt-1 block">{fmtN(totalEggsPieces)} pieces</span>
-              )}
-            </div>
-            <div className="form-group">
-              <label className="form-label">Cracked eggs</label>
-              <div className="flex gap-1 mb-1">
-                <button type="button" className={`btn text-xs py-0.5 px-2 ${form.crackedMode === 'pieces' ? 'btn-primary' : ''}`} onClick={() => set('crackedMode', 'pieces')}>Pieces</button>
-                <button type="button" className={`btn text-xs py-0.5 px-2 ${form.crackedMode === 'crates' ? 'btn-primary' : ''}`} onClick={() => set('crackedMode', 'crates')}>Crates</button>
+              <span className="text-stone-400 font-medium pb-4">+</span>
+              <div className="flex-1">
+                <input type="number" className="input" placeholder="Loose pieces" min={0} max={29} value={form.totalLoose} onChange={e => set('totalLoose', e.target.value)} />
+                <span className="text-xs text-stone-400 mt-0.5 block text-center">loose pieces</span>
               </div>
-              <input type="number" className="input" value={form.crackedEggs} onChange={e => set('crackedEggs', e.target.value)} />
-              {form.crackedEggs && Number(form.crackedEggs) > 0 && form.crackedMode === 'crates' && (
-                <span className="text-xs text-stone-400 mt-1 block">{fmtN(crackedPieces)} pieces</span>
+              {totalEggsPieces > 0 && (
+                <div className="pb-4 text-sm text-stone-500 whitespace-nowrap">= <strong className="text-brand-600">{fmtN(totalEggsPieces)}</strong> eggs</div>
               )}
             </div>
           </div>
+
+          {/* Cracked eggs — crates + loose */}
+          <div className="mb-3">
+            <label className="form-label">Cracked eggs</label>
+            <div className="flex gap-2 items-center">
+              <div className="flex-1">
+                <input type="number" className="input" placeholder="Crates" min={0} value={form.crackedCrates} onChange={e => set('crackedCrates', e.target.value)} />
+                <span className="text-xs text-stone-400 mt-0.5 block text-center">crates</span>
+              </div>
+              <span className="text-stone-400 font-medium pb-4">+</span>
+              <div className="flex-1">
+                <input type="number" className="input" placeholder="Loose pieces" min={0} value={form.crackedLoose} onChange={e => set('crackedLoose', e.target.value)} />
+                <span className="text-xs text-stone-400 mt-0.5 block text-center">loose pieces</span>
+              </div>
+              {crackedPieces > 0 && (
+                <div className="pb-4 text-sm text-stone-500 whitespace-nowrap">= <strong className="text-red-500">{fmtN(crackedPieces)}</strong> eggs</div>
+              )}
+            </div>
+          </div>
+
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Spoilt eggs</label>
-              <input type="number" className="input" value={form.spoiltEggs} onChange={e => set('spoiltEggs', e.target.value)} />
+              <label className="form-label">Spoilt eggs (pieces)</label>
+              <input type="number" className="input" value={form.spoiltEggs} min={0} onChange={e => set('spoiltEggs', e.target.value)} />
             </div>
             <div className="form-group">
               <label className="form-label">Notes (optional)</label>
               <input type="text" className="input" placeholder="e.g. birds laying well" value={form.notes} onChange={e => set('notes', e.target.value)} />
             </div>
           </div>
+
           <div className="flex items-center gap-4">
-            <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>
+            <button className="btn btn-primary" onClick={handleAdd} disabled={saving || !totalEggsPieces || !form.penId}>
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add record
             </button>
-            {form.totalEggs && (
+            {hasInput && totalEggsPieces > 0 && (
               <span className="text-sm text-stone-500">
                 Good eggs: <strong className="text-brand-600">{fmtN(preview)}</strong>
-                {preview >= 30 && <> · Crates: <strong className="text-brand-600">{fmtN(previewCrates)}</strong> <span className="text-stone-400">+ {preview % 30} loose</span></>}
+                {' · '}
+                Crates: <strong className="text-brand-600">{fmtN(previewCrates)}</strong>
+                {previewLoose > 0 && <span className="text-stone-400"> + {previewLoose} loose</span>}
               </span>
             )}
           </div>
@@ -146,7 +172,7 @@ export default function ProductionPage() {
                     <td><strong className="text-brand-600">{fmtN(r.goodEggs)}</strong></td>
                     <td className="text-stone-500">
                       <strong>{Math.floor(r.goodEggs / 30)}</strong>
-                      <span className="text-stone-400 text-xs"> + {r.goodEggs % 30}</span>
+                      {r.goodEggs % 30 > 0 && <span className="text-stone-400 text-xs"> + {r.goodEggs % 30}</span>}
                     </td>
                     <td className="text-stone-400">{r.notes || '—'}</td>
                     <td>{can.deleteProduction && <DeleteBtn onDelete={() => deleteProduction(r.id)} />}</td>

@@ -9,31 +9,19 @@ import { useRole } from '@/hooks/useRole'
 import { fmt, fmtN, today } from '@/lib/utils'
 import { Plus, Printer, Loader2 } from 'lucide-react'
 import type { SaleRecord, OtherSaleRecord, EggSize } from '@/types'
+import { farmService } from '@/services/farmService'
 
 const EGG_SIZES: EggSize[] = ['Jumbo', 'Medium', 'Table']
 const OTHER_ITEMS = ['Cracks', 'Sacks', 'Manure', 'Old Cages', 'Hens', 'Other']
 const CRACK_UNITS = ['Crates', 'Pieces']
+const STATUSES = ['Paid', 'Unpaid', 'Part payment']
 
 function getLogoBase64(): string {
-  // Use absolute URL for the logo so it works in print windows
   return `${window.location.origin}/logo.png`
 }
 
-function printInvoice(r: SaleRecord) {
-  const w = window.open('', '_blank')
-  if (!w) return
-  const invoiceNo = r.id.slice(0, 8).toUpperCase()
-  const printDate = new Date().toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })
-  const saleDate = new Date(r.date).toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })
-  const pricePerPiece = (r.pricePerCrate / 30).toLocaleString('en-NG', { minimumFractionDigits: 2 })
-  const statusColor = r.status === 'Paid' ? '#0F6E56' : r.status === 'Unpaid' ? '#dc2626' : '#d97706'
-
-  w.document.write(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Receipt — ${invoiceNo}</title>
-  <style>
+function buildInvoiceStyles(statusColor: string) {
+  return `
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #1a1a18; }
     .page { max-width: 600px; margin: 0 auto; padding: 40px; }
@@ -51,47 +39,61 @@ function printInvoice(r: SaleRecord) {
     .items-table th { background: #f7f6f2; text-align: left; padding: 10px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
     .items-table td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
     .items-table tr:last-child td { border-bottom: none; }
-    .totals { margin-left: auto; width: 280px; }
+    .totals { margin-left: auto; width: 280px; margin-bottom: 16px; }
     .totals-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
     .totals-row.grand { font-size: 18px; font-weight: 700; color: #0F6E56; border-bottom: none; padding-top: 12px; }
     .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: ${statusColor}20; color: ${statusColor}; }
-    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
+    .payment-info { border: 1px solid #e5e5e5; border-radius: 8px; padding: 14px 16px; margin-top: 20px; }
+    .payment-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 10px; }
+    .payment-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+    .payment-row span:first-child { color: #666; }
+    .footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
     .footer p { font-size: 11px; color: #999; }
     .thank-you { font-size: 14px; font-weight: 600; color: #0F6E56; }
-    @media print {
-      .page { padding: 20px; }
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-  </style>
+    @media print { .page { padding: 20px; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  `
+}
+
+function buildBankHtml(settings: any) {
+  if (!settings?.bankName) return ''
+  return `
+    <div class="payment-info">
+      <div class="payment-title">Payment Information</div>
+      <div class="payment-row"><span>Bank</span><span>${settings.bankName}</span></div>
+      <div class="payment-row"><span>Account Number</span><span><strong>${settings.bankAccount}</strong></span></div>
+      <div class="payment-row"><span>Account Name</span><span>${settings.bankAccountName}</span></div>
+    </div>`
+}
+
+function printInvoice(r: SaleRecord, settings: any) {
+  const w = window.open('', '_blank')
+  if (!w) return
+  const invoiceNo = r.id.slice(0, 8).toUpperCase()
+  const saleDate = new Date(r.date).toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })
+  const statusColor = r.status === 'Paid' ? '#0F6E56' : r.status === 'Unpaid' ? '#dc2626' : '#d97706'
+
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt — ${invoiceNo}</title>
+  <style>${buildInvoiceStyles(statusColor)}</style>
 </head>
 <body>
 <div class="page">
   <div class="header">
-    <img src="${getLogoBase64()}" class="logo" alt="Okesreal Farm" />
+    <img src="${getLogoBase64()}" class="logo" alt="${settings?.name ?? 'Farm'}" />
     <div class="company-info">
-      <h1>Okesreal Farm</h1>
+      <h1>${settings?.name ?? 'Okesreal Farm'}</h1>
       <p>Poultry Farm Management System</p>
-      <p>Lagos, Nigeria</p>
+      ${settings?.location ? `<p>${settings.location}</p>` : ''}
     </div>
   </div>
 
   <div class="receipt-meta">
-    <div class="meta-block">
-      <h3>Invoice No</h3>
-      <p class="invoice-no">#${invoiceNo}</p>
-    </div>
-    <div class="meta-block">
-      <h3>Sale Date</h3>
-      <p>${saleDate}</p>
-    </div>
-    <div class="meta-block">
-      <h3>Print Date</h3>
-      <p>${printDate}</p>
-    </div>
-    <div class="meta-block">
-      <h3>Payment Status</h3>
-      <span class="status-badge">${r.status}</span>
-    </div>
+    <div class="meta-block"><h3>Invoice No</h3><p class="invoice-no">#${invoiceNo}</p></div>
+    <div class="meta-block"><h3>Sale Date</h3><p>${saleDate}</p></div>
+    <div class="meta-block"><h3>Payment Status</h3><span class="status-badge">${r.status}</span></div>
   </div>
 
   <div class="meta-block" style="margin-bottom:24px">
@@ -108,7 +110,6 @@ function printInvoice(r: SaleRecord) {
         <th>Size</th>
         <th style="text-align:center">Crates</th>
         <th style="text-align:right">Price/Crate</th>
-        <th style="text-align:right">Price/Piece</th>
         <th style="text-align:right">Amount</th>
       </tr>
     </thead>
@@ -118,7 +119,6 @@ function printInvoice(r: SaleRecord) {
         <td>${r.size}</td>
         <td style="text-align:center">${r.crates}</td>
         <td style="text-align:right">₦${r.pricePerCrate.toLocaleString()}</td>
-        <td style="text-align:right">₦${pricePerPiece}</td>
         <td style="text-align:right"><strong>₦${r.total.toLocaleString()}</strong></td>
       </tr>
     </tbody>
@@ -126,16 +126,14 @@ function printInvoice(r: SaleRecord) {
 
   <div class="totals">
     <div class="totals-row"><span>Subtotal</span><span>₦${r.total.toLocaleString()}</span></div>
-    <div class="totals-row"><span>Discount</span><span>₦0</span></div>
     <div class="totals-row grand"><span>Total</span><span>₦${r.total.toLocaleString()}</span></div>
   </div>
 
+  ${buildBankHtml(settings)}
+
   <div class="footer">
-    <div>
-      <p class="thank-you">Thank you for your business!</p>
-      <p style="margin-top:4px">For enquiries, contact Okesreal Farm</p>
-    </div>
-    <p>Generated by Okesreal Farm Management System</p>
+    <p class="thank-you">Thank you for your business!</p>
+    <p>Generated by ${settings?.name ?? 'Okesreal Farm'} Management System</p>
   </div>
 </div>
 <script>window.onload = function(){ window.print(); }<\/script>
@@ -143,11 +141,10 @@ function printInvoice(r: SaleRecord) {
   w.document.close()
 }
 
-function printOtherInvoice(r: OtherSaleRecord) {
+function printOtherInvoice(r: OtherSaleRecord, settings: any) {
   const w = window.open('', '_blank')
   if (!w) return
   const invoiceNo = r.id.slice(0, 8).toUpperCase()
-  const printDate = new Date().toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })
   const saleDate = new Date(r.date).toLocaleDateString('en-NG', { day: '2-digit', month: 'long', year: 'numeric' })
   const statusColor = r.status === 'Paid' ? '#0F6E56' : r.status === 'Unpaid' ? '#dc2626' : '#d97706'
 
@@ -156,48 +153,22 @@ function printOtherInvoice(r: OtherSaleRecord) {
 <head>
   <meta charset="UTF-8">
   <title>Receipt — ${invoiceNo}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #1a1a18; }
-    .page { max-width: 600px; margin: 0 auto; padding: 40px; }
-    .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 24px; border-bottom: 3px solid #0F6E56; margin-bottom: 28px; }
-    .logo { height: 60px; object-fit: contain; }
-    .company-info { text-align: right; }
-    .company-info h1 { font-size: 20px; font-weight: 700; color: #0F6E56; }
-    .company-info p { font-size: 12px; color: #666; margin-top: 2px; }
-    .receipt-meta { display: flex; justify-content: space-between; margin-bottom: 28px; }
-    .meta-block h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 6px; }
-    .meta-block p { font-size: 14px; font-weight: 500; }
-    .meta-block .invoice-no { font-size: 18px; font-weight: 700; color: #0F6E56; }
-    .divider { border: none; border-top: 1px solid #e5e5e5; margin: 20px 0; }
-    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    .items-table th { background: #f7f6f2; text-align: left; padding: 10px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
-    .items-table td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
-    .totals { margin-left: auto; width: 280px; }
-    .totals-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
-    .totals-row.grand { font-size: 18px; font-weight: 700; color: #0F6E56; border-bottom: none; padding-top: 12px; }
-    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: ${statusColor}20; color: ${statusColor}; }
-    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
-    .footer p { font-size: 11px; color: #999; }
-    .thank-you { font-size: 14px; font-weight: 600; color: #0F6E56; }
-    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
+  <style>${buildInvoiceStyles(statusColor)}</style>
 </head>
 <body>
 <div class="page">
   <div class="header">
-    <img src="${getLogoBase64()}" class="logo" alt="Okesreal Farm" />
+    <img src="${getLogoBase64()}" class="logo" alt="${settings?.name ?? 'Farm'}" />
     <div class="company-info">
-      <h1>Okesreal Farm</h1>
+      <h1>${settings?.name ?? 'Okesreal Farm'}</h1>
       <p>Poultry Farm Management System</p>
-      <p>Lagos, Nigeria</p>
+      ${settings?.location ? `<p>${settings.location}</p>` : ''}
     </div>
   </div>
 
   <div class="receipt-meta">
     <div class="meta-block"><h3>Invoice No</h3><p class="invoice-no">#${invoiceNo}</p></div>
     <div class="meta-block"><h3>Sale Date</h3><p>${saleDate}</p></div>
-    <div class="meta-block"><h3>Print Date</h3><p>${printDate}</p></div>
     <div class="meta-block"><h3>Payment Status</h3><span class="status-badge">${r.status}</span></div>
   </div>
 
@@ -230,16 +201,14 @@ function printOtherInvoice(r: OtherSaleRecord) {
   </table>
 
   <div class="totals">
-    <div class="totals-row"><span>Subtotal</span><span>₦${r.total.toLocaleString()}</span></div>
     <div class="totals-row grand"><span>Total</span><span>₦${r.total.toLocaleString()}</span></div>
   </div>
 
+  ${buildBankHtml(settings)}
+
   <div class="footer">
-    <div>
-      <p class="thank-you">Thank you for your business!</p>
-      <p style="margin-top:4px">For enquiries, contact Okesreal Farm</p>
-    </div>
-    <p>Generated by Okesreal Farm Management System</p>
+    <p class="thank-you">Thank you for your business!</p>
+    <p>Generated by ${settings?.name ?? 'Okesreal Farm'} Management System</p>
   </div>
 </div>
 <script>window.onload = function(){ window.print(); }<\/script>
@@ -250,11 +219,36 @@ function printOtherInvoice(r: OtherSaleRecord) {
 const initEggForm = { date: today(), customer: '', size: 'Table' as EggSize, crates: '', pricePerCrate: '', total: '', status: 'Paid' as const }
 const initOtherForm = { date: today(), item: 'Cracks', customItem: '', qty: '', unit: 'Crates', unitPrice: '', total: '', customer: '', penId: '', status: 'Paid' as const }
 
+function StatusSelect({ saleId, current }: { saleId: string; current: string }) {
+  const { updateSaleStatus } = useFarmStore() as any
+  const [saving, setSaving] = useState(false)
+
+  async function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    setSaving(true)
+    try { await updateSaleStatus(saleId, e.target.value) }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      {saving && <Loader2 size={11} className="animate-spin text-stone-400" />}
+      <select
+        className="input text-xs py-0.5 px-1.5 w-32"
+        value={current}
+        onChange={handleChange}
+        disabled={saving}
+      >
+        {STATUSES.map(s => <option key={s}>{s}</option>)}
+      </select>
+    </div>
+  )
+}
+
 export default function SalesPage() {
   const { sales, otherSales, addSale, deleteSale, addOtherSale, deleteOtherSale, pens } = useFarmStore()
   const { eggRevenue, otherRevenue, totalRevenue, unpaidDebt } = useTotals()
   const farmSettings = (useFarmStore() as any).farmSettings
-  const { can } = useRole()
+  const { can, isAdmin } = useRole()
   const [tab, setTab] = useState<'eggs' | 'other'>('eggs')
   const [eggForm, setEggForm] = useState(initEggForm)
   const [otherForm, setOtherForm] = useState(initOtherForm)
@@ -268,7 +262,6 @@ export default function SalesPage() {
     if (c && p) setEggForm(f => ({ ...f, total: String(c * p) }))
   }, [eggForm.crates, eggForm.pricePerCrate])
 
-  // Auto-fill price when size changes
   useEffect(() => {
     if (!farmSettings) return
     const priceMap: Record<string, number> = {
@@ -309,7 +302,6 @@ export default function SalesPage() {
     <Shell>
       <PageHeader title="Sales" subtitle="Egg sales and other farm sales" />
 
-      {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <div className="kpi-card"><div className="kpi-label">Total revenue</div><div className="kpi-value text-brand-600">{fmt(totalRevenue)}</div></div>
         <div className="kpi-card"><div className="kpi-label">Egg revenue</div><div className="kpi-value">{fmt(eggRevenue)}</div></div>
@@ -317,7 +309,6 @@ export default function SalesPage() {
         <div className="kpi-card"><div className="kpi-label">Unpaid debts</div><div className="kpi-value text-red-500">{fmt(unpaidDebt)}</div></div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-4">
         <button className={`btn ${tab === 'eggs' ? 'btn-primary' : ''}`} onClick={() => setTab('eggs')}>🥚 Egg Sales</button>
         <button className={`btn ${tab === 'other' ? 'btn-primary' : ''}`} onClick={() => setTab('other')}>📦 Other Sales</button>
@@ -343,18 +334,13 @@ export default function SalesPage() {
                 <div className="form-group">
                   <label className="form-label">Price per crate (₦)</label>
                   <input type="number" className="input" value={eggForm.pricePerCrate} onChange={e => setE('pricePerCrate', e.target.value)} />
-                  {eggForm.pricePerCrate && Number(eggForm.pricePerCrate) > 0 && (
-                    <span className="text-[11px] text-stone-400 mt-1 block">
-                      {fmt(Number(eggForm.pricePerCrate))}/crate · {fmt(Number(eggForm.pricePerCrate) / 30)}/piece
-                    </span>
-                  )}
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group"><label className="form-label">Total (₦)</label><input type="number" className="input" placeholder="Auto" value={eggForm.total} onChange={e => setE('total', e.target.value)} /></div>
                 <div className="form-group"><label className="form-label">Payment status</label>
                   <select className="input" value={eggForm.status} onChange={e => setE('status', e.target.value)}>
-                    <option>Paid</option><option>Unpaid</option><option>Part payment</option>
+                    {STATUSES.map(s => <option key={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
@@ -378,9 +364,14 @@ export default function SalesPage() {
                         <td>{fmtN(r.crates)}</td>
                         <td>{fmt(r.pricePerCrate)}</td>
                         <td className="font-medium text-brand-600">{fmt(r.total)}</td>
-                        <td><span className={`badge ${r.status === 'Paid' ? 'badge-green' : r.status === 'Unpaid' ? 'badge-red' : 'badge-amber'}`}>{r.status}</span></td>
-                        <td><button className="btn text-xs py-1 px-2" onClick={() => printInvoice(r)}><Printer size={12} /> Invoice</button></td>
-                        <td>{can.writeSales && <DeleteBtn onDelete={() => deleteSale(r.id)} />}</td>
+                        <td>
+                          {isAdmin
+                            ? <StatusSelect saleId={r.id} current={r.status} />
+                            : <span className={`badge ${r.status === 'Paid' ? 'badge-green' : r.status === 'Unpaid' ? 'badge-red' : 'badge-amber'}`}>{r.status}</span>
+                          }
+                        </td>
+                        <td><button className="btn text-xs py-1 px-2" onClick={() => printInvoice(r, farmSettings)}><Printer size={12} /> Invoice</button></td>
+                        <td>{can.deleteSales && <DeleteBtn onDelete={() => deleteSale(r.id)} />}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -436,10 +427,14 @@ export default function SalesPage() {
               <div className="form-row">
                 <div className="form-group"><label className="form-label">Payment status</label>
                   <select className="input" value={otherForm.status} onChange={e => setO('status', e.target.value)}>
-                    <option>Paid</option><option>Unpaid</option><option>Part payment</option>
+                    {STATUSES.map(s => <option key={s}>{s}</option>)}
                   </select>
                 </div>
-                <div className="flex items-end"><button className="btn btn-primary w-full" onClick={handleAddOther} disabled={savingOther}>{savingOther ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Record sale</button></div>
+                <div className="flex items-end">
+                  <button className="btn btn-primary w-full" onClick={handleAddOther} disabled={savingOther}>
+                    {savingOther ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Record sale
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -460,8 +455,8 @@ export default function SalesPage() {
                         <td className="font-medium text-brand-600">{fmt(r.total)}</td>
                         <td className="text-stone-400">{r.customer || '—'}</td>
                         <td><span className={`badge ${r.status === 'Paid' ? 'badge-green' : r.status === 'Unpaid' ? 'badge-red' : 'badge-amber'}`}>{r.status}</span></td>
-                        <td><button className="btn text-xs py-1 px-2" onClick={() => printOtherInvoice(r)}><Printer size={12} /> Invoice</button></td>
-                        <td>{can.writeSales && <DeleteBtn onDelete={() => deleteOtherSale(r.id)} />}</td>
+                        <td><button className="btn text-xs py-1 px-2" onClick={() => printOtherInvoice(r, farmSettings)}><Printer size={12} /> Invoice</button></td>
+                        <td>{can.deleteSales && <DeleteBtn onDelete={() => deleteOtherSale(r.id)} />}</td>
                       </tr>
                     ))}
                   </tbody>

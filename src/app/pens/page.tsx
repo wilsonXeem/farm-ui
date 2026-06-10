@@ -112,7 +112,7 @@ function PenCard({ penId, onAddBirds }: { penId: string; onAddBirds: (id: string
 }
 
 export default function PensPage() {
-  const { pens, workers, addPen, updatePen, loadAll } = useFarmStore() as any
+  const { pens, workers, addPen, updatePen, loadAll, refresh } = useFarmStore() as any
   const { can } = useRole()
   const [form, setForm] = useState(initForm)
   const [assignPenId, setAssignPenId] = useState('')
@@ -251,6 +251,7 @@ export default function PensPage() {
           onDone={() => {
             loadBirdEntries()
             loadAll()  // refreshes pen totalBirds
+            refresh()  // refreshes all derived totals
           }}
         />
       )}

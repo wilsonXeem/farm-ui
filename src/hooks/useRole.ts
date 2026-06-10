@@ -36,17 +36,21 @@ export function useRole() {
   const isSales = role === 'Sales'
 
   const can = {
-    writeProduction: role === 'Admin' || role === 'Farm Manager' || role === 'Staff',
-    writeMortality:  role === 'Admin' || role === 'Farm Manager' || role === 'Staff',
-    deleteProduction: role === 'Admin' || role === 'Farm Manager',
-    deleteMortality:  role === 'Admin' || role === 'Farm Manager',
-    writeInventory:  role === 'Admin' || role === 'Farm Manager',
-    writeFeed:       role === 'Admin' || role === 'Farm Manager',
-    writeExpenses:   role === 'Admin' || role === 'Sales',
-    writeSales:      role === 'Admin' || role === 'Sales' || role === 'Accountant',
-    writeWorkers:    role === 'Admin',
-    writePayroll:    role === 'Admin' || role === 'Accountant',
-    viewSettings:    role === 'Admin',
+    writeProduction:  isAdmin || role === 'Farm Manager' || isStaff,
+    writeMortality:   isAdmin || role === 'Farm Manager' || isStaff,
+    deleteProduction: isAdmin || role === 'Farm Manager',
+    deleteMortality:  isAdmin || role === 'Farm Manager',
+    writeInventory:   isAdmin || role === 'Farm Manager',
+    deleteInventory:  isAdmin,
+    writeFeed:        isAdmin || role === 'Farm Manager',
+    writeExpenses:    isAdmin || isSales,
+    deleteExpenses:   isAdmin,
+    writeSales:       isAdmin || isSales || role === 'Accountant',
+    deleteSales:      isAdmin,
+    writeWorkers:     isAdmin,
+    deleteWorkers:    isAdmin,
+    writePayroll:     isAdmin || role === 'Accountant',
+    viewSettings:     isAdmin,
   }
 
   function canAccessNav(href: string) {

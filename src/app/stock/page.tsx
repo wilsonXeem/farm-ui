@@ -118,6 +118,7 @@ function StockOutModal({ item, pens, onClose, onDone }: { item: StockItem; pens:
 
 export default function StockPage() {
   const { pens } = useFarmStore()
+  const { refresh } = useFarmStore() as any
   const { can } = useRole()
   const [items, setItems] = useState<StockItem[]>([])
   const [movements, setMovements] = useState<any[]>([])
@@ -151,7 +152,7 @@ export default function StockPage() {
     setSavingItem(true)
     try {
       await farmService.createStock({ name: form.name, category: CAT_RMAP[form.category], unit: form.unit, minQty: Number(form.minQty), supplier: form.supplier || undefined })
-      setForm(initItemForm); setAddingItem(false); loadItems()
+      setForm(initItemForm); setAddingItem(false); loadItems(); refresh()
     } finally { setSavingItem(false) }
   }
 
@@ -253,7 +254,7 @@ export default function StockPage() {
                             </button>
                           </div>
                         </td>
-                        <td>{can.writeInventory && <DeleteBtn onDelete={async () => { await farmService.deleteStock(item.id); loadItems() }} />}</td>
+                        <td>{can.deleteInventory && <DeleteBtn onDelete={async () => { await farmService.deleteStock(item.id); loadItems(); refresh() }} />}</td>
                       </tr>
                     )
                   })}
@@ -326,8 +327,8 @@ export default function StockPage() {
         </div>
       )}
 
-      {modal === 'in' && selectedItem && <StockInModal item={selectedItem} onClose={() => setModal(null)} onDone={loadItems} />}
-      {modal === 'out' && selectedItem && <StockOutModal item={selectedItem} pens={pens} onClose={() => setModal(null)} onDone={loadItems} />}
+      {modal === 'in' && selectedItem && <StockInModal item={selectedItem} onClose={() => setModal(null)} onDone={() => { loadItems(); refresh() }} />}
+      {modal === 'out' && selectedItem && <StockOutModal item={selectedItem} pens={pens} onClose={() => setModal(null)} onDone={() => { loadItems(); refresh() }} />}
     </Shell>
   )
 }

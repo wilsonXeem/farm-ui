@@ -11,8 +11,11 @@ interface ExtendedFarmStore extends FarmStore {
   farmSettings: FarmSettings
   otherSales: OtherSaleRecord[]
   loadAll: () => Promise<void>
+  refresh: () => Promise<void>
+  updateSaleStatus: (id: string, status: string) => Promise<void>
   addOtherSale: (r: Omit<OtherSaleRecord, 'id'>) => void
   deleteOtherSale: (id: string) => void
+  updateWorker: (id: string, r: Partial<Omit<Worker, 'id'>>) => void
 }
 
 export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
@@ -59,22 +62,46 @@ export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
     }
   },
 
+  refresh: async () => {
+    try {
+      const [farmSettings, pens, production, mortality, inventory, feed, expenses, sales, otherSales, workers, payroll] =
+        await Promise.all([
+          farmService.getFarmSettings(),
+          farmService.getPens(),
+          farmService.getProduction(),
+          farmService.getMortality(),
+          farmService.getInventory(),
+          farmService.getFeed(),
+          farmService.getExpenses(),
+          farmService.getSales(),
+          farmService.getOtherSales(),
+          farmService.getWorkers(),
+          farmService.getPayroll(),
+        ])
+      set({ farmSettings, pens, production, mortality, inventory, feed, expenses, sales, otherSales, workers, payroll })
+    } catch (e) { console.error('Refresh failed:', e) }
+  },
+
   addProduction: async (r) => {
     const rec = await farmService.addProduction(r)
     set(s => ({ production: [rec, ...s.production] }))
+    get().refresh()
   },
   deleteProduction: async (id) => {
     await farmService.deleteProduction(id)
     set(s => ({ production: s.production.filter(x => x.id !== id) }))
+    get().refresh()
   },
 
   addMortality: async (r) => {
     const rec = await farmService.addMortality(r)
     set(s => ({ mortality: [rec, ...s.mortality] }))
+    get().refresh()
   },
   deleteMortality: async (id) => {
     await farmService.deleteMortality(id)
     set(s => ({ mortality: s.mortality.filter(x => x.id !== id) }))
+    get().refresh()
   },
 
   addInventory: async (r) => {
@@ -98,19 +125,28 @@ export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
   addExpense: async (r) => {
     const rec = await farmService.addExpense(r)
     set(s => ({ expenses: [rec, ...s.expenses] }))
+    get().refresh()
   },
   deleteExpense: async (id) => {
     await farmService.deleteExpense(id)
     set(s => ({ expenses: s.expenses.filter(x => x.id !== id) }))
+    get().refresh()
   },
 
   addSale: async (r) => {
     const rec = await farmService.addSale(r)
     set(s => ({ sales: [rec, ...s.sales] }))
+    get().refresh()
+  },
+  updateSaleStatus: async (id: string, status: string) => {
+    const rec = await farmService.updateSaleStatus(id, status)
+    set(s => ({ sales: s.sales.map(x => x.id === id ? rec : x) }))
+    get().refresh()
   },
   deleteSale: async (id) => {
     await farmService.deleteSale(id)
     set(s => ({ sales: s.sales.filter(x => x.id !== id) }))
+    get().refresh()
   },
 
   addOtherSale: async (r) => {
@@ -121,6 +157,7 @@ export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
     } else {
       set(s => ({ otherSales: [rec, ...s.otherSales] }))
     }
+    get().refresh()
   },
   deleteOtherSale: async (id) => {
     const rec = get().otherSales.find(x => x.id === id)
@@ -131,37 +168,45 @@ export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
     } else {
       set(s => ({ otherSales: s.otherSales.filter(x => x.id !== id) }))
     }
+    get().refresh()
   },
 
   addWorker: async (r) => {
     const rec = await farmService.addWorker(r)
     set(s => ({ workers: [rec, ...s.workers] }))
+    get().refresh()
   },
   updateWorker: async (id, r) => {
     const rec = await farmService.updateWorker(id, r)
     set(s => ({ workers: s.workers.map(w => w.id === id ? rec : w) }))
+    get().refresh()
   },
   deleteWorker: async (id) => {
     await farmService.deleteWorker(id)
     set(s => ({ workers: s.workers.filter(x => x.id !== id) }))
+    get().refresh()
   },
 
   addPayroll: async (r) => {
     const rec = await farmService.addPayroll(r)
     set(s => ({ payroll: [rec, ...s.payroll] }))
+    get().refresh()
   },
 
   addPen: async (r) => {
     const rec = await farmService.addPen(r)
     set(s => ({ pens: [...s.pens, rec] }))
+    get().refresh()
   },
   updatePen: async (id, r) => {
     const rec = await farmService.updatePen(id, r)
     set(s => ({ pens: s.pens.map(p => p.id === id ? rec : p) }))
+    get().refresh()
   },
   deletePen: async (id) => {
     await farmService.deletePen(id)
     set(s => ({ pens: s.pens.filter(p => p.id !== id) }))
+    get().refresh()
   },
 }))
 

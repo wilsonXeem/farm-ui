@@ -7,14 +7,13 @@ import DeleteBtn from '@/components/ui/DeleteBtn'
 import { useFarmStore } from '@/store/farmStore'
 import { useRole } from '@/hooks/useRole'
 import { farmService } from '@/services/farmService'
-import { fmtN, today } from '@/lib/utils'
+import { fmtN, fmt, today } from '@/lib/utils'
 import { Plus, FlaskConical, Package, ClipboardList } from 'lucide-react'
 import type { FeedFormula, FeedBatch, FeedUsageRecord, StockItem } from '@/types'
 
-const UNITS = ['bags', 'kg', 'litres', 'pcs']
-
 export default function FeedFormulaPage() {
   const { pens } = useFarmStore()
+  const { refresh } = useFarmStore() as any
   const { can } = useRole()
   const [tab, setTab] = useState<'formulas' | 'batches' | 'usage'>('formulas')
   const [formulas, setFormulas] = useState<FeedFormula[]>([])
@@ -24,20 +23,20 @@ export default function FeedFormulaPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Formula builder state
+  // Formula form
   const [showFormulaForm, setShowFormulaForm] = useState(false)
   const [formulaName, setFormulaName] = useState('')
   const [formulaDesc, setFormulaDesc] = useState('')
   const [formulaUnit, setFormulaUnit] = useState('bags')
-  const [ingredients, setIngredients] = useState<{ stockId: string; qtyPerUnit: string }[]>([
-    { stockId: '', qtyPerUnit: '' }
-  ])
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([''])
 
-  // Batch production state
+  // Batch form
   const [showBatchForm, setShowBatchForm] = useState(false)
   const [batchForm, setBatchForm] = useState({ formulaId: '', date: today(), batchNo: '', qtyProduced: '', notes: '' })
+  // Actual quantities per ingredient for the batch
+  const [batchIngredientQtys, setBatchIngredientQtys] = useState<Record<string, string>>({})
 
-  // Usage state
+  // Usage form
   const [showUsageForm, setShowUsageForm] = useState(false)
   const [usageForm, setUsageForm] = useState({ batchId: '', date: today(), qty: '', penId: '', notes: '' })
 
@@ -58,26 +57,33 @@ export default function FeedFormulaPage() {
 
   useEffect(() => { load() }, [load])
 
-  // Auto-generate batch number
   useEffect(() => {
     if (showBatchForm) {
       const next = `BATCH-${String(batches.length + 1).padStart(3, '0')}`
       setBatchForm(f => ({ ...f, batchNo: next }))
+      setBatchIngredientQtys({})
     }
   }, [showBatchForm, batches.length])
 
+  // When formula selection changes, reset ingredient qty inputs
+  useEffect(() => {
+    setBatchIngredientQtys({})
+  }, [batchForm.formulaId])
+
   async function handleCreateFormula(e: React.FormEvent) {
     e.preventDefault()
-    const validIngredients = ingredients.filter(i => i.stockId && i.qtyPerUnit)
+    const validIngredients = selectedIngredients.filter(id => id)
     if (!formulaName || validIngredients.length === 0) return
     setLoading(true); setError('')
     try {
       await farmService.createFormula({
-        name: formulaName, description: formulaDesc, unit: formulaUnit,
-        ingredients: validIngredients.map(i => ({ stockId: i.stockId, qtyPerUnit: Number(i.qtyPerUnit) })),
+        name: formulaName,
+        description: formulaDesc,
+        unit: formulaUnit,
+        ingredients: validIngredients.map(stockId => ({ stockId })),
       })
       setFormulaName(''); setFormulaDesc(''); setFormulaUnit('bags')
-      setIngredients([{ stockId: '', qtyPerUnit: '' }])
+      setSelectedIngredients([''])
       setShowFormulaForm(false); load()
     } catch (e: any) { setError(e.message ?? 'Failed') } finally { setLoading(false) }
   }
@@ -85,15 +91,25 @@ export default function FeedFormulaPage() {
   async function handleProduceBatch(e: React.FormEvent) {
     e.preventDefault()
     if (!batchForm.formulaId || !batchForm.qtyProduced) return
+    const formula = formulas.find(f => f.id === batchForm.formulaId)
+    if (!formula) return
+    const ingredients = formula.ingredients
+      .map(ing => ({ stockId: ing.stockId, qty: Number(batchIngredientQtys[ing.stockId] ?? 0) }))
+      .filter(i => i.qty > 0)
+    if (ingredients.length === 0) { setError('Enter quantities for at least one ingredient'); return }
     setLoading(true); setError('')
     try {
       await farmService.produceBatch({
-        formulaId: batchForm.formulaId, date: batchForm.date,
-        batchNo: batchForm.batchNo, qtyProduced: Number(batchForm.qtyProduced),
+        formulaId: batchForm.formulaId,
+        date: batchForm.date,
+        batchNo: batchForm.batchNo,
+        qtyProduced: Number(batchForm.qtyProduced),
+        ingredients,
         notes: batchForm.notes || undefined,
       })
       setBatchForm({ formulaId: '', date: today(), batchNo: '', qtyProduced: '', notes: '' })
-      setShowBatchForm(false); load()
+      setBatchIngredientQtys({})
+      setShowBatchForm(false); load(); refresh()
     } catch (e: any) { setError(e.message ?? 'Failed') } finally { setLoading(false) }
   }
 
@@ -108,13 +124,13 @@ export default function FeedFormulaPage() {
         notes: usageForm.notes || undefined,
       })
       setUsageForm({ batchId: '', date: today(), qty: '', penId: '', notes: '' })
-      setShowUsageForm(false); load()
+      setShowUsageForm(false); load(); refresh()
     } catch (e: any) { setError(e.message ?? 'Failed') } finally { setLoading(false) }
   }
 
+  const selectedFormula = formulas.find(f => f.id === batchForm.formulaId)
   const totalProduced = batches.reduce((s, b) => s + b.qtyProduced, 0)
   const totalRemaining = batches.reduce((s, b) => s + b.qtyRemaining, 0)
-  const totalUsed = usages.reduce((s, u) => s + u.qty, 0)
 
   return (
     <Shell>
@@ -124,10 +140,9 @@ export default function FeedFormulaPage() {
         <div className="kpi-card"><div className="kpi-label">Formulas</div><div className="kpi-value">{formulas.length}</div></div>
         <div className="kpi-card"><div className="kpi-label">Batches produced</div><div className="kpi-value">{batches.length}</div></div>
         <div className="kpi-card"><div className="kpi-label">Total remaining</div><div className="kpi-value text-brand-600">{fmtN(totalRemaining)}</div></div>
-        <div className="kpi-card"><div className="kpi-label">Total used</div><div className="kpi-value text-red-500">{fmtN(totalUsed)}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Total produced</div><div className="kpi-value">{fmtN(totalProduced)}</div></div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-4 flex-wrap">
         <button className={`btn ${tab === 'formulas' ? 'btn-primary' : ''}`} onClick={() => setTab('formulas')}><FlaskConical size={14} /> Formulas</button>
         <button className={`btn ${tab === 'batches' ? 'btn-primary' : ''}`} onClick={() => setTab('batches')}><Package size={14} /> Batches</button>
@@ -150,40 +165,44 @@ export default function FeedFormulaPage() {
               <div className="section-title">New feed formula</div>
               <form onSubmit={handleCreateFormula} className="space-y-4">
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">Formula name</label><input className="input" placeholder="e.g. Layers Mash Formula A" value={formulaName} onChange={e => setFormulaName(e.target.value)} required /></div>
-                  <div className="form-group"><label className="form-label">Unit of measurement</label>
+                  <div className="form-group">
+                    <label className="form-label">Formula name</label>
+                    <input className="input" placeholder="e.g. Layers Mash A" value={formulaName} onChange={e => setFormulaName(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Batch unit</label>
                     <select className="input" value={formulaUnit} onChange={e => setFormulaUnit(e.target.value)}>
-                      {UNITS.map(u => <option key={u}>{u}</option>)}
+                      {['bags', 'kg', 'litres', 'pcs'].map(u => <option key={u}>{u}</option>)}
                     </select>
                   </div>
                 </div>
-                <div className="form-group"><label className="form-label">Description (optional)</label><input className="input" placeholder="e.g. Standard laying hen formula" value={formulaDesc} onChange={e => setFormulaDesc(e.target.value)} /></div>
+                <div className="form-group">
+                  <label className="form-label">Description (optional)</label>
+                  <input className="input" placeholder="e.g. Standard laying hen formula" value={formulaDesc} onChange={e => setFormulaDesc(e.target.value)} />
+                </div>
 
                 <div>
-                  <div className="section-title">Ingredients (qty per {formulaUnit})</div>
+                  <div className="section-title">Ingredients</div>
+                  <p className="text-xs text-stone-400 mb-2">Just select what goes into this formula. Quantities are entered when producing each batch.</p>
                   <div className="space-y-2">
-                    {ingredients.map((ing, i) => (
-                      <div key={i} className="flex gap-2 items-end">
-                        <div className="form-group flex-1">
-                          {i === 0 && <label className="form-label">Stock item</label>}
-                          <select className="input" value={ing.stockId} onChange={e => { const n = [...ingredients]; n[i].stockId = e.target.value; setIngredients(n) }}>
-                            <option value="">— Select item —</option>
-                            {stockItems.map(s => <option key={s.id} value={s.id}>{s.name} ({s.unit})</option>)}
-                          </select>
-                        </div>
-                        <div className="form-group w-36">
-                          {i === 0 && <label className="form-label">Qty per {formulaUnit}</label>}
-                          <div className="flex items-center gap-1">
-                            <input type="number" className="input" placeholder="e.g. 3" value={ing.qtyPerUnit} onChange={e => { const n = [...ingredients]; n[i].qtyPerUnit = e.target.value; setIngredients(n) }} min={0.001} step={0.001} />
-                            <span className="text-xs text-stone-400 whitespace-nowrap">
-                              {stockItems.find(s => s.id === ing.stockId)?.unit ?? ''}
-                            </span>
-                          </div>
-                        </div>
-                        <button type="button" className="btn btn-danger mb-0.5" onClick={() => setIngredients(ingredients.filter((_, j) => j !== i))}>✕</button>
+                    {selectedIngredients.map((stockId, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <select
+                          className="input flex-1"
+                          value={stockId}
+                          onChange={e => {
+                            const n = [...selectedIngredients]
+                            n[i] = e.target.value
+                            setSelectedIngredients(n)
+                          }}
+                        >
+                          <option value="">— Select ingredient —</option>
+                          {stockItems.map(s => <option key={s.id} value={s.id}>{s.name} ({s.unit})</option>)}
+                        </select>
+                        <button type="button" className="btn btn-danger" onClick={() => setSelectedIngredients(selectedIngredients.filter((_, j) => j !== i))}>✕</button>
                       </div>
                     ))}
-                    <button type="button" className="btn text-xs" onClick={() => setIngredients([...ingredients, { stockId: '', qtyPerUnit: '' }])}>
+                    <button type="button" className="btn text-xs" onClick={() => setSelectedIngredients([...selectedIngredients, ''])}>
                       <Plus size={12} /> Add ingredient
                     </button>
                   </div>
@@ -196,7 +215,7 @@ export default function FeedFormulaPage() {
 
           <div className="card">
             <div className="section-title">All formulas</div>
-            {formulas.length === 0 ? <EmptyState message="No formulas yet. Create your first formula above." /> : (
+            {formulas.length === 0 ? <EmptyState message="No formulas yet." /> : (
               <div className="space-y-3">
                 {formulas.map(f => (
                   <div key={f.id} className="border border-stone-100 rounded-xl p-4">
@@ -204,17 +223,15 @@ export default function FeedFormulaPage() {
                       <div>
                         <div className="font-medium text-stone-900">{f.name}</div>
                         {f.description && <div className="text-xs text-stone-400 mt-0.5">{f.description}</div>}
-                        <div className="text-xs text-stone-400 mt-1">Unit: <strong>{f.unit}</strong> · Batches: <strong>{f._count?.batches ?? 0}</strong> · Created: {f.createdAt?.split('T')[0]}</div>
+                        <div className="text-xs text-stone-400 mt-1">Unit: <strong>{f.unit}</strong> · Batches: <strong>{f._count?.batches ?? 0}</strong></div>
                       </div>
                       {can.writeInventory && <DeleteBtn onDelete={async () => { await farmService.deleteFormula(f.id); load() }} />}
                     </div>
-                    <div className="section-title mb-2">Ingredients per {f.unit}</div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 mt-2">
                       {f.ingredients.map(ing => (
-                        <div key={ing.id} className="bg-stone-50 rounded-lg px-3 py-1.5 text-xs">
-                          <span className="font-medium">{ing.stock.name}</span>
-                          <span className="text-stone-400"> — {fmtN(ing.qtyPerUnit)} {ing.stock.unit}</span>
-                        </div>
+                        <span key={ing.id} className="bg-stone-50 rounded-lg px-3 py-1 text-xs font-medium text-stone-700">
+                          {ing.stock.name} <span className="text-stone-400">({ing.stock.unit})</span>
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -239,34 +256,68 @@ export default function FeedFormulaPage() {
               <div className="section-title">Record feed production batch</div>
               <form onSubmit={handleProduceBatch} className="space-y-3">
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">Formula</label>
+                  <div className="form-group">
+                    <label className="form-label">Formula</label>
                     <select className="input" value={batchForm.formulaId} onChange={e => setBatchForm(f => ({ ...f, formulaId: e.target.value }))} required>
                       <option value="">— Select formula —</option>
-                      {formulas.map(f => <option key={f.id} value={f.id}>{f.name} ({f.unit})</option>)}
+                      {formulas.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
                   </div>
-                  <div className="form-group"><label className="form-label">Date produced</label><input type="date" className="input" value={batchForm.date} onChange={e => setBatchForm(f => ({ ...f, date: e.target.value }))} /></div>
+                  <div className="form-group">
+                    <label className="form-label">Date produced</label>
+                    <input type="date" className="input" value={batchForm.date} onChange={e => setBatchForm(f => ({ ...f, date: e.target.value }))} />
+                  </div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">Batch number</label><input className="input" value={batchForm.batchNo} onChange={e => setBatchForm(f => ({ ...f, batchNo: e.target.value }))} required /></div>
                   <div className="form-group">
-                    <label className="form-label">Qty produced ({formulas.find(f => f.id === batchForm.formulaId)?.unit ?? 'units'})</label>
+                    <label className="form-label">Batch number</label>
+                    <input className="input" value={batchForm.batchNo} onChange={e => setBatchForm(f => ({ ...f, batchNo: e.target.value }))} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Batch size ({selectedFormula?.unit ?? 'units'})</label>
                     <input type="number" className="input" placeholder="e.g. 50" value={batchForm.qtyProduced} onChange={e => setBatchForm(f => ({ ...f, qtyProduced: e.target.value }))} min={0.01} step={0.01} required />
                   </div>
                 </div>
-                {batchForm.formulaId && batchForm.qtyProduced && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-                    <strong>Ingredients that will be deducted from stock:</strong>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {formulas.find(f => f.id === batchForm.formulaId)?.ingredients.map(ing => (
-                        <span key={ing.id} className="bg-amber-100 rounded px-2 py-0.5">
-                          {ing.stock.name}: {fmtN(ing.qtyPerUnit * Number(batchForm.qtyProduced))} {ing.stock.unit}
-                        </span>
-                      ))}
+
+                {/* Ingredient quantities for this batch */}
+                {selectedFormula && selectedFormula.ingredients.length > 0 && (
+                  <div>
+                    <div className="section-title">Ingredients used in this batch</div>
+                    <p className="text-xs text-stone-400 mb-2">Enter how much of each ingredient was used. Leave blank to skip.</p>
+                    <div className="space-y-2">
+                      {selectedFormula.ingredients.map(ing => {
+                        const stock = stockItems.find(s => s.id === ing.stockId)
+                        return (
+                          <div key={ing.id} className="flex items-center gap-3">
+                            <label className="text-sm text-stone-600 w-32 flex-shrink-0">{ing.stock.name}</label>
+                            <div className="flex items-center gap-1 flex-1">
+                              <input
+                                type="number"
+                                className="input"
+                                placeholder={`qty in ${ing.stock.unit}`}
+                                min={0}
+                                step={0.01}
+                                value={batchIngredientQtys[ing.stockId] ?? ''}
+                                onChange={e => setBatchIngredientQtys(q => ({ ...q, [ing.stockId]: e.target.value }))}
+                              />
+                              <span className="text-xs text-stone-400 whitespace-nowrap">{ing.stock.unit}</span>
+                            </div>
+                            {stock && batchIngredientQtys[ing.stockId] && (
+                              <span className={`text-xs whitespace-nowrap ${Number(batchIngredientQtys[ing.stockId]) > stock.currentQty ? 'text-red-500' : 'text-stone-400'}`}>
+                                {fmtN(stock.currentQty)} available
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
-                <div className="form-group"><label className="form-label">Notes (optional)</label><input className="input" placeholder="e.g. June production run" value={batchForm.notes} onChange={e => setBatchForm(f => ({ ...f, notes: e.target.value }))} /></div>
+
+                <div className="form-group">
+                  <label className="form-label">Notes (optional)</label>
+                  <input className="input" placeholder="e.g. June production run" value={batchForm.notes} onChange={e => setBatchForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
                 <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Processing...' : 'Produce batch'}</button>
               </form>
             </div>
@@ -275,29 +326,38 @@ export default function FeedFormulaPage() {
           <div className="card">
             <div className="section-title">Production batches</div>
             {batches.length === 0 ? <EmptyState message="No batches produced yet." /> : (
-              <div className="tbl-wrap">
-                <table className="tbl">
-                  <thead><tr><th>Batch no.</th><th>Formula</th><th>Date</th><th>Produced</th><th>Remaining</th><th>Used</th><th>Notes</th><th>Recorded at</th></tr></thead>
-                  <tbody>
-                    {batches.map(b => {
-                      const unit = b.formula?.unit ?? ''
-                      const used = b.qtyProduced - b.qtyRemaining
-                      const low = b.qtyRemaining === 0
-                      return (
-                        <tr key={b.id} className={low ? 'opacity-50' : ''}>
-                          <td className="font-medium">{b.batchNo}</td>
-                          <td><span className="badge badge-green">{b.formula?.name ?? '—'}</span></td>
-                          <td>{b.date?.split('T')[0]}</td>
-                          <td>{fmtN(b.qtyProduced)} <span className="text-stone-400 text-xs">{unit}</span></td>
-                          <td className={b.qtyRemaining === 0 ? 'text-stone-400' : 'text-brand-600 font-medium'}>{fmtN(b.qtyRemaining)} {unit}</td>
-                          <td className="text-red-400">{fmtN(used)} {unit}</td>
-                          <td className="text-stone-400">{b.notes || '—'}</td>
-                          <td className="text-stone-400 text-xs">{b.createdAt ? new Date(b.createdAt).toLocaleString('en-NG') : '—'}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {batches.map(b => {
+                  const unit = b.formula?.unit ?? ''
+                  const used = b.qtyProduced - b.qtyRemaining
+                  const low = b.qtyRemaining === 0
+                  return (
+                    <div key={b.id} className={`border border-stone-100 rounded-xl p-4 ${low ? 'opacity-50' : ''}`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <span className="font-medium">{b.batchNo}</span>
+                          <span className="ml-2 badge badge-green">{b.formula?.name}</span>
+                          <span className="ml-2 text-xs text-stone-400">{b.date?.split('T')[0]}</span>
+                        </div>
+                        <div className="text-right text-sm">
+                          <div className="font-medium text-brand-600">{fmtN(b.qtyRemaining)} {unit} left</div>
+                          <div className="text-xs text-stone-400">{fmtN(used)} used of {fmtN(b.qtyProduced)}</div>
+                        </div>
+                      </div>
+                      {(b as any).ingredients?.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {(b as any).ingredients.map((ing: any) => (
+                            <span key={ing.id} className="bg-stone-50 rounded px-2 py-0.5 text-xs text-stone-600">
+                              {ing.stock?.name}: <strong>{fmtN(ing.qty)}</strong> {ing.stock?.unit}
+                              {ing.costUsed > 0 && <span className="text-stone-400"> · {fmt(ing.costUsed)}</span>}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {b.notes && <div className="text-xs text-stone-400 mt-1">{b.notes}</div>}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -318,7 +378,8 @@ export default function FeedFormulaPage() {
               <div className="section-title">Record feed usage</div>
               <form onSubmit={handleRecordUsage} className="space-y-3">
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">Batch</label>
+                  <div className="form-group">
+                    <label className="form-label">Batch</label>
                     <select className="input" value={usageForm.batchId} onChange={e => setUsageForm(f => ({ ...f, batchId: e.target.value }))} required>
                       <option value="">— Select batch —</option>
                       {batches.filter(b => b.qtyRemaining > 0).map(b => (
@@ -326,23 +387,28 @@ export default function FeedFormulaPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="form-group"><label className="form-label">Date used</label><input type="date" className="input" value={usageForm.date} onChange={e => setUsageForm(f => ({ ...f, date: e.target.value }))} /></div>
+                  <div className="form-group">
+                    <label className="form-label">Date used</label>
+                    <input type="date" className="input" value={usageForm.date} onChange={e => setUsageForm(f => ({ ...f, date: e.target.value }))} />
+                  </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">
-                      Qty used ({batches.find(b => b.id === usageForm.batchId)?.formula?.unit ?? 'units'})
-                    </label>
+                    <label className="form-label">Qty used ({batches.find(b => b.id === usageForm.batchId)?.formula?.unit ?? 'units'})</label>
                     <input type="number" className="input" placeholder="e.g. 5" value={usageForm.qty} onChange={e => setUsageForm(f => ({ ...f, qty: e.target.value }))} min={0.01} step={0.01} required />
                   </div>
-                  <div className="form-group"><label className="form-label">Pen (optional)</label>
+                  <div className="form-group">
+                    <label className="form-label">Pen (optional)</label>
                     <select className="input" value={usageForm.penId} onChange={e => setUsageForm(f => ({ ...f, penId: e.target.value }))}>
                       <option value="">— Farm-wide —</option>
                       {pens.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                   </div>
                 </div>
-                <div className="form-group"><label className="form-label">Notes (optional)</label><input className="input" placeholder="e.g. Morning feeding" value={usageForm.notes} onChange={e => setUsageForm(f => ({ ...f, notes: e.target.value }))} /></div>
+                <div className="form-group">
+                  <label className="form-label">Notes (optional)</label>
+                  <input className="input" placeholder="e.g. Morning feeding" value={usageForm.notes} onChange={e => setUsageForm(f => ({ ...f, notes: e.target.value }))} />
+                </div>
                 <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : 'Record usage'}</button>
               </form>
             </div>
@@ -353,7 +419,7 @@ export default function FeedFormulaPage() {
             {usages.length === 0 ? <EmptyState message="No usage recorded yet." /> : (
               <div className="tbl-wrap">
                 <table className="tbl">
-                  <thead><tr><th>Date</th><th>Batch</th><th>Formula</th><th>Qty used</th><th>Pen</th><th>Notes</th><th>Recorded at</th></tr></thead>
+                  <thead><tr><th>Date</th><th>Batch</th><th>Formula</th><th>Qty used</th><th>Pen</th><th>Notes</th></tr></thead>
                   <tbody>
                     {usages.map(u => (
                       <tr key={u.id}>
@@ -363,7 +429,6 @@ export default function FeedFormulaPage() {
                         <td className="text-red-500 font-medium">{fmtN(u.qty)} <span className="text-stone-400 text-xs">{u.batch?.formula?.unit}</span></td>
                         <td className="text-stone-400">{u.pen?.name ?? 'Farm-wide'}</td>
                         <td className="text-stone-400">{u.notes || '—'}</td>
-                        <td className="text-stone-400 text-xs">{u.createdAt ? new Date(u.createdAt).toLocaleString('en-NG') : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
