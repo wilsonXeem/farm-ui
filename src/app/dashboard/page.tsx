@@ -235,6 +235,7 @@ function AdminDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <KpiCard label="Birds available" value={fmtN(t.availableBirds)} sub={`of ${fmtN(t.totalBirds)} total`} color="blue" />
         <KpiCard label="Good eggs (total)" value={fmtN(t.goodEggs)} sub={`${fmtN(Math.floor(t.goodEggs / 30))} crates + ${t.goodEggs % 30} loose`} />
+        <KpiCard label="Eggs on hand" value={fmtN(t.eggsOnHand)} sub={`${t.cratesOnHand} crates + ${t.looseOnHand} loose`} color="green" />
         <KpiCard label="Eggs today" value={fmtN(todayEggs)} sub={todayEggs >= 30 ? `${Math.floor(todayEggs / 30)} crates` : undefined} />
         <KpiCard label="Cost per egg" value={fmt(t.costPerEgg)} sub={`Crate: ${fmt(t.costPerCrate)}`} />
         <KpiCard label="Total revenue" value={fmt(t.totalRevenue)} sub={`Today: ${fmt(todaySales)}`} color="green" />

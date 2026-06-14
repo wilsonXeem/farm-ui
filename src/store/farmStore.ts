@@ -213,6 +213,10 @@ export const useFarmStore = create<ExtendedFarmStore>((set, get) => ({
 export function useTotals() {
   const { production, expenses, sales, otherSales, workers, mortality, pens, payroll } = useFarmStore()
   const goodEggs = production.reduce((s, r) => s + r.goodEggs, 0)
+  const eggsSold = sales.reduce((s, r) => s + (r.crates * 30), 0)
+  const eggsOnHand = Math.max(0, goodEggs - eggsSold)
+  const cratesOnHand = Math.floor(eggsOnHand / 30)
+  const looseOnHand = eggsOnHand % 30
   const salaryCost = payroll.reduce((s, p) => s + p.amount, 0)
   const otherCost = expenses.reduce((s, r) => s + r.amount, 0)
   const totalExpenses = salaryCost + otherCost
@@ -232,7 +236,8 @@ export function useTotals() {
   // Expense breakdown by category
   const expByCategory = (cat: string) => expenses.filter(e => e.category === cat).reduce((s, r) => s + r.amount, 0)
   return {
-    goodEggs, salaryCost, otherCost, totalExpenses,
+    goodEggs, eggsSold, eggsOnHand, cratesOnHand, looseOnHand,
+    salaryCost, otherCost, totalExpenses,
     eggRevenue, otherRevenue, totalRevenue,
     profit, costPerEgg, costPerCrate,
     availableBirds, totalMortality, unpaidDebt, totalBirds,
